@@ -138,7 +138,7 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
     const hasPermission = (permission?: string) => {
         const roles = (auth.user?.roles as any[])?.map((r: any) => typeof r === 'string' ? r : r.name) || [];
 
-        if (roles.includes('Super admin') || roles.includes('Administrateur')) {
+        if (roles.includes('Super admin') || roles.includes('Administrateur') || roles.includes('Super Administrateur')) {
             return true;
         }
 
