@@ -14,12 +14,6 @@ class LoginResponse implements LoginResponseContract
      */
     public function toResponse($request)
     {
-        $user = $request->user();
-
-        if ($user->hasAnyRole(['Super admin', 'Administrateur', 'Super Administrateur'])) {
-            return redirect()->intended(route('dashboard'));
-        }
-
-        return redirect()->intended(route('credit.index'));
+        return redirect()->to('/credit/requests');
     }
 }
