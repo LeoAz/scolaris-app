@@ -78,6 +78,8 @@
         "vite": "^8.0.0"
     },
     "optionalDependencies": {
+        "@rolldown/binding-linux-x64-gnu": "0.13.2",
+        "@rolldown/binding-win32-x64-msvc": "0.13.2",
         "@rollup/rollup-linux-x64-gnu": "4.9.5",
         "@rollup/rollup-win32-x64-msvc": "4.9.5",
         "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
