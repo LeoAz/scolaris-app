@@ -62,9 +62,9 @@ class HandleInertiaRequests extends Middleware
 
         if ($request->is('credit*')) {
             $shared['credit'] = [
-                'statusCounts' => CreditRequestStatus::cases() ? collect(CreditRequestStatus::cases())->mapWithKeys(function ($status) {
+                'statusCounts' => collect(CreditRequestStatus::cases())->mapWithKeys(function ($status) {
                     return [$status->value => CreditRequest::where('status', $status->value)->count()];
-                }) : [],
+                })->all(),
                 'totalCount' => CreditRequest::count(),
             ];
         }

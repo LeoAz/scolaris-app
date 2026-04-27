@@ -138,6 +138,11 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
     const hasPermission = (permission?: string) => {
         const roles = auth.user?.roles || [];
 
+        // L'accès au tableau de bord est réservé aux administrateurs
+        if (permission === 'dashboard') {
+            return roles.includes('Super admin') || roles.includes('Administrateur') || roles.includes('Super Administrateur');
+        }
+
         if (roles.includes('Super admin') || roles.includes('Administrateur') || roles.includes('Super Administrateur')) {
             return true;
         }

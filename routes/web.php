@@ -15,7 +15,13 @@ use App\Http\Controllers\StakeholderController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    $user = auth()->user();
+
+    if ($user && $user->hasAnyRole(['Super admin', 'Administrateur', 'Super Administrateur'])) {
+        return redirect()->route('dashboard');
+    }
+
+    return redirect()->route('credit.index');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
