@@ -1,7 +1,10 @@
 <?php
 
+use App\Enums\CreditRequestStatus;
 use App\Models\Country;
+use App\Models\CreditRequest;
 use App\Models\CreditType;
+use App\Models\Stakeholder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -17,7 +20,7 @@ beforeEach(function () {
     $this->creditType = CreditType::create([
         'name' => 'Crédit Scolaire',
         'rate' => 5.0,
-        'duration_months' => 12
+        'duration_months' => 12,
     ]);
 });
 
@@ -37,7 +40,8 @@ test('admin can create a user with credit types', function () {
     $user = User::where('email', 'newuser@example.com')->first();
     expect($user)->not->toBeNull()
         ->and($user->creditTypes)->toHaveCount(1)
-        ->and($user->creditTypes->first()->id)->toBe($this->creditType->id);
+        ->and($user->creditTypes->first()->id)->toBe($this->creditType->id)
+        ->and($user->password_plain)->toBe('password123');
 });
 
 test('admin can update a user credit types', function () {
@@ -47,7 +51,7 @@ test('admin can update a user credit types', function () {
     $newCreditType = CreditType::create([
         'name' => 'Crédit Immobilier',
         'rate' => 3.0,
-        'duration_months' => 240
+        'duration_months' => 240,
     ]);
 
     $response = $this->actingAs($this->admin)->put(route('admin.users.update', $user), [
@@ -93,25 +97,43 @@ test('user cannot access unauthorized credit request', function () {
 
     $user->creditTypes()->attach($typeA);
 
-    $requestInB = \App\Models\CreditRequest::factory()->create([
+    $requestInB = CreditRequest::factory()->create([
         'credit_type_id' => $typeB->id,
         'country_id' => $this->country->id,
-        'student_id' => \App\Models\Stakeholder::factory()->create(['type' => 'student'])->id,
+        'student_id' => Stakeholder::factory()->create(['type' => 'student'])->id,
         'amount_requested' => 1000,
-        'status' => \App\Enums\CreditRequestStatus::CREATION,
+        'status' => CreditRequestStatus::CREATION,
     ]);
 
     $response = $this->actingAs($user)->get(route('credit.show', $requestInB));
     $response->assertStatus(403);
 
-    $requestInA = \App\Models\CreditRequest::factory()->create([
+    $requestInA = CreditRequest::factory()->create([
         'credit_type_id' => $typeA->id,
         'country_id' => $this->country->id,
-        'student_id' => \App\Models\Stakeholder::factory()->create(['type' => 'student'])->id,
+        'student_id' => Stakeholder::factory()->create(['type' => 'student'])->id,
         'amount_requested' => 1000,
-        'status' => \App\Enums\CreditRequestStatus::CREATION,
+        'status' => CreditRequestStatus::CREATION,
     ]);
 
     $response = $this->actingAs($user)->get(route('credit.show', $requestInA));
+    $response->assertStatus(200);
+});
+
+test('admin can export users', function () {
+    $response = $this->actingAs($this->admin)->get(route('admin.users.export'));
+
+    $response->assertStatus(200);
+    $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $response->assertHeader('Content-Disposition', 'attachment; filename=utilisateurs_'.now()->format('Y-m-d_H-i').'.xlsx');
+});
+
+test('any authenticated user can export users', function () {
+    $user = User::factory()->create();
+    $role = Role::create(['name' => 'Agent']);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('admin.users.export'));
+
     $response->assertStatus(200);
 });

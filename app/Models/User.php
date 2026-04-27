@@ -24,6 +24,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $email
  * @property string $username
  * @property string|null $password
+ * @property string|null $password_plain
  * @property Carbon|null $email_verified_at
  * @property Carbon|null $two_factor_confirmed_at
  * @property Carbon|null $created_at
@@ -34,8 +35,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, Role> $roles
  * @property-read Collection<int, Permission> $permissions
  */
-#[Fillable(['name', 'email', 'username', 'password'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Fillable(['name', 'email', 'username', 'password', 'password_plain'])]
+#[Hidden(['password', 'password_plain', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -57,17 +58,11 @@ class User extends Authenticatable
         return $this->belongsToMany(CreditType::class)->withTimestamps();
     }
 
-    /**
-     * @return bool
-     */
     public function hasFullAccessToCredits(): bool
     {
         return $this->hasAnyRole(['Super admin', 'Administrateur']);
     }
 
-    /**
-     * @return bool
-     */
     public function canAccessCreditRequest(CreditRequest $creditRequest): bool
     {
         if ($this->hasFullAccessToCredits()) {

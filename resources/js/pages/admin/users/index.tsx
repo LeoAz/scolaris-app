@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { AlertCircle, Edit, MoreHorizontal, Plus, Trash, Globe, FileText, Copy } from 'lucide-react';
+import { AlertCircle, Edit, MoreHorizontal, Plus, Trash, Globe, FileText, Copy, Download } from 'lucide-react';
 import * as React from 'react';
 
 import { DataTable } from '@/components/admin/data-table';
@@ -40,6 +40,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import AdminLayout from '@/layouts/admin/admin-layout';
+import { exportMethod as exportUsers } from '@/routes/admin/users';
 import { index as adminUsersIndex, store, update, destroy } from '@/routes/admin/users';
 
 interface User {
@@ -239,6 +240,10 @@ export default function UserIndex({ users, roles, countries, creditTypes, filter
         </Select>
     );
 
+    const handleExport = () => {
+        window.open(exportUsers().url, '_blank');
+    };
+
     return (
         <AdminLayout breadcrumbs={breadcrumbs}>
             <Head title="Gestion des Utilisateurs" />
@@ -249,9 +254,14 @@ export default function UserIndex({ users, roles, countries, creditTypes, filter
                         <h2 className="text-2xl font-bold tracking-tight">Utilisateurs</h2>
                         <p className="text-muted-foreground">Gérez les utilisateurs de votre application et leurs permissions.</p>
                     </div>
-                    <Button onClick={openCreateSheet} className="shadow-sm shadow-primary/20">
-                        <Plus className="mr-2 h-4 w-4" /> Ajouter un utilisateur
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={handleExport} className="shadow-sm">
+                            <Download className="mr-2 h-4 w-4" /> Exporter Excel
+                        </Button>
+                        <Button onClick={openCreateSheet} className="shadow-sm shadow-primary/20">
+                            <Plus className="mr-2 h-4 w-4" /> Ajouter un utilisateur
+                        </Button>
+                    </div>
                 </div>
 
                 <DataTable
