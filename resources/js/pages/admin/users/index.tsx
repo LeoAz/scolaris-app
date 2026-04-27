@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { AlertCircle, Edit, MoreHorizontal, Plus, Trash, Globe, FileText } from 'lucide-react';
+import { AlertCircle, Edit, MoreHorizontal, Plus, Trash, Globe, FileText, Copy } from 'lucide-react';
 import * as React from 'react';
 
 import { DataTable } from '@/components/admin/data-table';
@@ -106,6 +106,21 @@ export default function UserIndex({ users, roles, countries, creditTypes, filter
         setIsSheetOpen(true);
     };
 
+    const duplicateUser = (user: User) => {
+        setEditingUser(null);
+        setData({
+            name: `${user.name} (Copie)`,
+            email: `copy-${user.email}`,
+            username: `${user.username}_copy`,
+            password: '',
+            roles: user.roles.map(r => r.id.toString()),
+            countries: user.countries.map(c => c.id),
+            credit_types: user.credit_types.map(ct => ct.id),
+        });
+        clearErrors();
+        setIsSheetOpen(true);
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -190,6 +205,9 @@ export default function UserIndex({ users, roles, countries, creditTypes, filter
                     <DropdownMenuContent align="end" className="w-[160px]">
                         <DropdownMenuItem onClick={() => openEditSheet(user)}>
                             <Edit className="mr-2 h-4 w-4" /> Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => duplicateUser(user)}>
+                            <Copy className="mr-2 h-4 w-4" /> Dupliquer
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => confirmDelete(user)}>
                             <Trash className="mr-2 h-4 w-4" /> Supprimer
