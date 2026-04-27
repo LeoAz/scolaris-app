@@ -151,6 +151,11 @@ export interface CreditRequest {
     country_id: number;
     amount_requested: string | number;
     initial_contribution: string | number;
+    insurance_amount?: string | number;
+    processing_fees_variable?: string | number;
+    processing_fees_fixed?: string | number;
+    first_month_interest?: string | number;
+    total_microfinance_fees?: string | number;
     status: 'creation' | 'soumis' | 'valider' | 'rejeter' | 'cloturer' | 'resilie';
     submitted_at?: string;
     validated_at?: string;

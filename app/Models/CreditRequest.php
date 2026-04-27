@@ -30,6 +30,11 @@ class CreditRequest extends Model implements HasMedia
         'country_id',
         'amount_requested',
         'initial_contribution',
+        'insurance_amount',
+        'processing_fees_variable',
+        'processing_fees_fixed',
+        'first_month_interest',
+        'total_microfinance_fees',
         'status',
         'submitted_at',
         'validated_at',
@@ -44,6 +49,11 @@ class CreditRequest extends Model implements HasMedia
     protected $casts = [
         'amount_requested' => 'decimal:2',
         'initial_contribution' => 'decimal:2',
+        'insurance_amount' => 'decimal:2',
+        'processing_fees_variable' => 'decimal:2',
+        'processing_fees_fixed' => 'decimal:2',
+        'first_month_interest' => 'decimal:2',
+        'total_microfinance_fees' => 'decimal:2',
         'status' => CreditRequestStatus::class,
         'submitted_at' => 'datetime',
         'validated_at' => 'datetime',
@@ -228,5 +238,34 @@ class CreditRequest extends Model implements HasMedia
             $outputFileName,
             $extraData
         );
+    }
+
+    public function calculateFees(): void
+    {
+        $this->loadMissing(['creditType', 'country']);
+
+        $amount = (float) $this->amount_requested;
+        $rate = (float) $this->creditType->rate;
+
+        // - le montant de l'assurance (1% du montant du pret)
+        $this->insurance_amount = $amount * 0.01;
+
+        // - Frais de dossier (2% du montant du dossier a l'exception du pays Togo qui est a 1%)
+        $isTogo = $this->country && (strtoupper($this->country->code) === 'TG' || stripos($this->country->name, 'Togo') !== false);
+        $variableRate = $isTogo ? 0.01 : 0.02;
+        $this->processing_fees_variable = $amount * $variableRate;
+
+        // - Frais de dossier qui est invariable à 10000 fcfa
+        $this->processing_fees_fixed = 10000;
+
+        // - Interet du premier mois (calcul des interet sur la base de l'interet du pret par mois de facon dégressif)
+        $monthlyRate = $rate / 100;
+        $this->first_month_interest = $amount * $monthlyRate;
+
+        // la somme de tous cela constitue les frais de micro finance.
+        $this->total_microfinance_fees = $this->insurance_amount +
+            $this->processing_fees_variable +
+            $this->processing_fees_fixed +
+            $this->first_month_interest;
     }
 }

@@ -205,6 +205,9 @@ class CreditRequestController extends Controller
                 'created_by_id' => auth()->id(),
             ]);
 
+            $creditRequest->calculateFees();
+            $creditRequest->save();
+
             $creditRequest->activities()->create([
                 'user_id' => auth()->id(),
                 'action' => 'creation',
@@ -309,6 +312,9 @@ class CreditRequestController extends Controller
                 'initial_contribution' => $request->initial_contribution ?? 0,
                 'created_at' => $request->creation_date,
             ]);
+
+            $creditRequest->calculateFees();
+            $creditRequest->save();
 
             $creditRequest->activities()->create([
                 'user_id' => auth()->id(),

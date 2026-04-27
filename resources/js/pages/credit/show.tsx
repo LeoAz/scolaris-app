@@ -780,6 +780,37 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                                 <p className="text-sm font-medium">{creditRequest.credit_type?.duration_months} mois</p>
                                             </div>
                                         </div>
+
+                                        <div className="mt-4 p-3 bg-muted/50 rounded-lg space-y-3 border border-border/50">
+                                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Frais de microfinance</h4>
+
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-muted-foreground">Assurance (1%)</span>
+                                                <span className="font-semibold">{formatCurrency(creditRequest.insurance_amount || 0)}</span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-muted-foreground">Frais de dossier (variable)</span>
+                                                <span className="font-semibold">{formatCurrency(creditRequest.processing_fees_variable || 0)}</span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-muted-foreground">Frais de dossier (fixe)</span>
+                                                <span className="font-semibold">{formatCurrency(creditRequest.processing_fees_fixed || 0)}</span>
+                                            </div>
+
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-muted-foreground">Intérêt 1er mois</span>
+                                                <span className="font-semibold">{formatCurrency(creditRequest.first_month_interest || 0)}</span>
+                                            </div>
+
+                                            <Separator className="my-1 bg-border" />
+
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="font-bold text-primary">TOTAL FRAIS</span>
+                                                <span className="font-black text-primary">{formatCurrency(creditRequest.total_microfinance_fees || 0)}</span>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <Separator />

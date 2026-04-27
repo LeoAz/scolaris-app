@@ -43,7 +43,7 @@ import { index as creditIndex } from "@/routes/credit";
 import { index as recoveryIndex } from "@/routes/credit/recovery";
 import { index as terminationIndex } from "@/routes/credit/termination-requests/index";
 import { students as studentsIndex } from "@/routes/stakeholders";
-import type { NavItem, BreadcrumbItem } from "@/types";
+import type { NavItem, BreadcrumbItem, Auth } from "@/types";
 
 interface NavItemWithActive extends NavItem {
     activePath?: string;
@@ -131,12 +131,12 @@ function isNavItemActive(item: NavItemWithActive, currentPath: string): boolean 
 export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[] }) {
     const id = useId();
     const page = usePage();
-    const { auth } = page.props;
+    const { auth } = page.props as unknown as { auth: Auth };
     const getInitials = useInitials();
     const currentPath = page.url.split("?")[0];
 
     const hasPermission = (permission?: string) => {
-        const roles = (auth.user?.roles as any[])?.map((r: any) => typeof r === 'string' ? r : r.name) || [];
+        const roles = auth.user?.roles || [];
 
         if (roles.includes('Super admin') || roles.includes('Administrateur') || roles.includes('Super Administrateur')) {
             return true;
@@ -146,7 +146,7 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
             return true;
         }
 
-        const userPermissions = (auth.user?.permissions as any[])?.map((p: any) => typeof p === 'string' ? p : p.name) || [];
+        const userPermissions = auth.user?.permissions || [];
 
         return userPermissions.includes(permission);
     };

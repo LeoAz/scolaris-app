@@ -43,7 +43,12 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $user?->load(['roles', 'permissions'])->loadCount('unreadNotifications'),
+                'user' => $user ? [
+                    ...$user->toArray(),
+                    'roles' => $user->roles->pluck('name'),
+                    'permissions' => $user->getAllPermissions()->pluck('name'),
+                    'unreadNotificationsCount' => $user->unreadNotifications()->count(),
+                ] : null,
             ],
             'notifications' => [
                 'list' => $user?->notifications()->latest()->limit(10)->get() ?? [],
