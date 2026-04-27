@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CreditRequestStatus;
 use App\Models\CreditRequest;
 use App\Models\LoanTerminationRequest;
-use App\Models\User;
 use App\Notifications\LoanTerminationProcessedNotification;
 use App\Notifications\LoanTerminationRequestedNotification;
-use App\Enums\CreditRequestStatus;
+use App\Traits\NotifiesStakeholders;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 
 class LoanTerminationRequestController extends Controller
 {
+    use NotifiesStakeholders;
+
     public function index()
     {
         $requests = LoanTerminationRequest::with(['creditRequest.student', 'user'])
@@ -93,7 +95,7 @@ class LoanTerminationRequestController extends Controller
             'status' => CreditRequestStatus::REJETER,
             'rejected_at' => now(),
             'rejected_by_id' => auth()->id(),
-            'rejection_reason' => "Résiliation approuvée : " . $loanTerminationRequest->reason,
+            'rejection_reason' => 'Résiliation approuvée : '.$loanTerminationRequest->reason,
         ]);
 
         // Clôturer (annuler) toutes les mensualités en attente liées à ce dossier
@@ -138,24 +140,15 @@ class LoanTerminationRequestController extends Controller
             $notification = new LoanTerminationProcessedNotification($request);
         }
 
-        // Destinataires : L'utilisateur qui a fait la demande (toujours notifié si traitée, ou si c'est lui qui l'a créée c'est optionnel mais ici on notifie les admins)
+        // Destinataires : L'utilisateur qui a fait la demande
         $recipients = collect();
         if ($request->status !== 'pending') {
             $recipients->push($request->user);
         }
 
-        // Ajouter les administrateurs et super administrateurs
-        $admins = User::role(['Super admin', 'Administrateur'])->get();
-        $recipients = $recipients->concat($admins);
-
-        // Ajouter les contrôleurs du pays lié au dossier
-        $controllers = User::role('Controlleur (Dossier)')
-            ->whereHas('countries', function ($query) use ($countryId) {
-                $query->where('countries.id', $countryId);
-            })
-            ->get();
-
-        $recipients = $recipients->concat($controllers)->unique('id');
+        // Ajouter les administrateurs et super administrateurs, contrôleurs et validateurs du pays
+        $stakeholders = $this->getStakeholders($countryId);
+        $recipients = $recipients->concat($stakeholders)->unique('id');
 
         if ($recipients->isNotEmpty()) {
             Notification::send($recipients, $notification);

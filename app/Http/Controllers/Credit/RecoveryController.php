@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Credit;
 use App\Http\Controllers\Controller;
 use App\Models\CreditRequestInstallment;
 use App\Models\CreditRequestRepayment;
-use App\Models\User;
 use App\Notifications\RecoveryRecorded;
+use App\Traits\NotifiesStakeholders;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -15,6 +15,8 @@ use Inertia\Response;
 
 class RecoveryController extends Controller
 {
+    use NotifiesStakeholders;
+
     public function index(Request $request): Response
     {
         $user = $request->user();
@@ -126,9 +128,7 @@ class RecoveryController extends Controller
         $repayment->load('creditRequest.student');
         $countryId = $repayment->creditRequest->country_id;
 
-        $recipients = User::role(['Administrateur', 'Super admin', 'Controlleur (Dossier)'])
-            ->whereHas('countries', fn ($q) => $q->where('countries.id', $countryId))
-            ->get();
+        $recipients = $this->getStakeholders($countryId);
 
         Notification::send($recipients, new RecoveryRecorded($repayment));
 

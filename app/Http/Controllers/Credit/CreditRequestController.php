@@ -13,10 +13,11 @@ use App\Models\CreditRequestInstallment;
 use App\Models\CreditRequestRepayment;
 use App\Models\CreditType;
 use App\Models\Stakeholder;
-use App\Models\User;
 use App\Notifications\CreditRequestCreated;
 use App\Notifications\CreditRequestRejected;
 use App\Notifications\CreditRequestSubmitted;
+use App\Notifications\LoanClosedNotification;
+use App\Traits\NotifiesStakeholders;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,6 +28,8 @@ use Inertia\Response;
 
 class CreditRequestController extends Controller
 {
+    use NotifiesStakeholders;
+
     public function index(Request $request): Response
     {
         $query = CreditRequest::query()
@@ -215,13 +218,7 @@ class CreditRequestController extends Controller
             }
 
             // 5. Send Notifications
-            $recipients = User::role(['Administrateur', 'Super admin'])->get();
-
-            $countryControllers = User::whereHas('countries', function ($query) use ($creditRequest) {
-                $query->where('countries.id', $creditRequest->country_id);
-            })->get();
-
-            $allRecipients = $recipients->concat($countryControllers)
+            $allRecipients = $this->getStakeholders($creditRequest->country_id)
                 ->push(auth()->user())
                 ->unique('id');
 
@@ -411,16 +408,7 @@ class CreditRequestController extends Controller
         ]);
 
         // Envoyer la notification
-        $recipients = User::role(['Administrateur', 'Super admin'])->get();
-
-        // Ajouter les contrôleurs du pays lié au dossier
-        $countryControllers = User::role('Controlleur (Dossier)')
-            ->whereHas('countries', function ($query) use ($creditRequest) {
-                $query->where('countries.id', $creditRequest->country_id);
-            })
-            ->get();
-
-        $recipients = $recipients->concat($countryControllers)->unique('id');
+        $recipients = $this->getStakeholders($creditRequest->country_id);
 
         if ($recipients->isNotEmpty()) {
             Notification::send($recipients, new CreditRequestSubmitted($creditRequest));
@@ -486,18 +474,11 @@ class CreditRequestController extends Controller
             'description' => 'Le dossier a été rejeté. Motif : '.$request->input('reason', 'Non spécifié'),
         ]);
 
-        // Destinataires : Admin, Super admin, Controleur (Dossier) liés au pays, et le créateur
-        $admins = User::role(['Administrateur', 'Super admin'])->get();
-
-        $controllers = User::role('Controlleur (Dossier)')
-            ->whereHas('countries', function ($query) use ($creditRequest) {
-                $query->where('countries.id', $creditRequest->country_id);
-            })
-            ->get();
-
-        $creator = $creditRequest->creator;
-
-        $recipients = $admins->concat($controllers)->push($creator)->filter()->unique('id');
+        // Destinataires : Admin, Super admin, Controleur (Dossier), Validateurs liés au pays, et le créateur
+        $recipients = $this->getStakeholders($creditRequest->country_id)
+            ->push($creditRequest->creator)
+            ->filter()
+            ->unique('id');
 
         Notification::send($recipients, new CreditRequestRejected($creditRequest, $request->input('reason')));
 
@@ -516,7 +497,39 @@ class CreditRequestController extends Controller
             'description' => 'Le dossier a été résilié.',
         ]);
 
+        // Notifier les parties prenantes
+        $recipients = $this->getStakeholders($creditRequest->country_id)
+            ->push($creditRequest->creator)
+            ->filter()
+            ->unique('id');
+
+        // Note: On pourrait créer une notification spécifique mais Rejet peut suffire ou on utilise une notification générique
+        Notification::send($recipients, new CreditRequestRejected($creditRequest, 'Résiliation du dossier'));
+
         return back()->with('success', 'Dossier résilié avec succès.');
+    }
+
+    public function cloturer(CreditRequest $creditRequest): RedirectResponse
+    {
+        $creditRequest->update([
+            'status' => CreditRequestStatus::CLOTURER->value,
+        ]);
+
+        $creditRequest->activities()->create([
+            'user_id' => auth()->id(),
+            'action' => 'cloture',
+            'description' => 'Le dossier a été clôturé.',
+        ]);
+
+        // Notifier les parties prenantes
+        $recipients = $this->getStakeholders($creditRequest->country_id)
+            ->push($creditRequest->creator)
+            ->filter()
+            ->unique('id');
+
+        Notification::send($recipients, new LoanClosedNotification($creditRequest));
+
+        return back()->with('success', 'Dossier clôturé avec succès.');
     }
 
     public function destroy(CreditRequest $creditRequest)

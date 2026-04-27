@@ -7,13 +7,12 @@ use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Credit\CreditRequestController;
+use App\Http\Controllers\Credit\RecoveryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LoanTerminationRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\StakeholderController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use Laravel\Fortify\Features;
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
@@ -21,7 +20,6 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('users', [UserController::class, 'index'])->name('users.index');
@@ -59,6 +57,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('requests/{creditRequest}/validate-request', [CreditRequestController::class, 'validateRequest'])->name('validate');
         Route::post('requests/{creditRequest}/reject', [CreditRequestController::class, 'rejectRequest'])->name('reject');
         Route::post('requests/{creditRequest}/resiliate', [CreditRequestController::class, 'resiliate'])->name('resiliate');
+        Route::post('requests/{creditRequest}/cloturer', [CreditRequestController::class, 'cloturer'])->name('cloturer');
 
         Route::get('termination-requests', [LoanTerminationRequestController::class, 'index'])->name('termination-requests.index');
         Route::get('requests/{creditRequest}/termination/create', [LoanTerminationRequestController::class, 'create'])->name('termination-requests.create');
@@ -76,10 +75,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('requests/{creditRequest}/repayments/{repayment}/validate', [CreditRequestController::class, 'validateRepayment'])->name('installments.repayments.validate');
         Route::post('requests/{creditRequest}/repayments/{repayment}/reject', [CreditRequestController::class, 'rejectRepayment'])->name('installments.repayments.reject');
 
-        Route::get('recovery', [\App\Http\Controllers\Credit\RecoveryController::class, 'index'])->name('recovery.index');
-        Route::post('recovery/installments/{installment}/record', [\App\Http\Controllers\Credit\RecoveryController::class, 'record'])->name('recovery.record');
-        Route::post('recovery/repayments/{repayment}/validate', [\App\Http\Controllers\Credit\RecoveryController::class, 'validateRepayment'])->name('recovery.validate');
-        Route::post('recovery/repayments/{repayment}/reject', [\App\Http\Controllers\Credit\RecoveryController::class, 'rejectRepayment'])->name('recovery.reject');
+        Route::get('recovery', [RecoveryController::class, 'index'])->name('recovery.index');
+        Route::post('recovery/installments/{installment}/record', [RecoveryController::class, 'record'])->name('recovery.record');
+        Route::post('recovery/repayments/{repayment}/validate', [RecoveryController::class, 'validateRepayment'])->name('recovery.validate');
+        Route::post('recovery/repayments/{repayment}/reject', [RecoveryController::class, 'rejectRepayment'])->name('recovery.reject');
     });
 
     Route::prefix('stakeholders')->name('stakeholders.')->group(function () {

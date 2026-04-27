@@ -122,6 +122,7 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
     const [showSubmitModal, setShowSubmitModal] = React.useState(false);
     const [showValidateModal, setShowValidateModal] = React.useState(false);
     const [showRejectModal, setShowRejectModal] = React.useState(false);
+    const [showCloturerModal, setShowCloturerModal] = React.useState(false);
 
     const handleSubmit = () => {
         post(submit({ creditRequest: creditRequest.id }).url, {
@@ -144,6 +145,12 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
         });
     };
 
+    const handleCloturer = () => {
+        post(route('credit.cloturer', creditRequest.id), {
+            onSuccess: () => setShowCloturerModal(false),
+        });
+    };
+
     const formatCurrency = (amount: string | number) => {
         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(Number(amount));
     };
@@ -162,7 +169,7 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
         });
     };
 
-    const handleAction = (action: 'submit' | 'validate' | 'resiliate' | 'reject') => {
+    const handleAction = (action: 'submit' | 'validate' | 'resiliate' | 'reject' | 'cloturer') => {
         if (action === 'submit') {
             setShowSubmitModal(true);
 
@@ -177,6 +184,12 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
 
         if (action === 'reject') {
             setShowRejectModal(true);
+
+            return;
+        }
+
+        if (action === 'cloturer') {
+            setShowCloturerModal(true);
 
             return;
         }
@@ -610,6 +623,13 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                         <span>Voir le récapitulatif</span>
                                     </DropdownMenuItem>
 
+                                    {creditRequest.status === 'valider' && (
+                                        <DropdownMenuItem onClick={() => handleAction('cloturer')} className="cursor-pointer text-gray-600 focus:text-gray-600">
+                                            <Minus className="mr-2 h-4 w-4" />
+                                            <span>Clôturer le dossier</span>
+                                        </DropdownMenuItem>
+                                    )}
+
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         onClick={() => router.get(terminationRequests.create({ query: { creditRequest: creditRequest.id } }).url)}
@@ -946,6 +966,27 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                     </div>
                 </div>
             </div>
+            <AlertDialog open={showCloturerModal} onOpenChange={setShowCloturerModal}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmer la clôture</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Êtes-vous sûr de vouloir clôturer ce dossier ? Cette action est irréversible et marquera le dossier comme terminé.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleCloturer}
+                            disabled={submitting}
+                            className="bg-gray-600 hover:bg-gray-700"
+                        >
+                            {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Confirmer la clôture
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
