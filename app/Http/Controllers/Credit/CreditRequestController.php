@@ -352,6 +352,10 @@ class CreditRequestController extends Controller
 
         $creditRequest->load(['creditType', 'student', 'guarantor', 'country', 'creator', 'validator', 'rejector', 'media']);
 
+        $creditRequest->media->each(function ($media) {
+            $media->setAttribute('original_url', $media->getTemporaryUrl(now()->addMinutes(60)));
+        });
+
         $activities = $creditRequest->activities()
             ->with('user')
             ->paginate(10, ['*'], 'activities_page')
@@ -593,7 +597,7 @@ class CreditRequestController extends Controller
             'creditRequest' => array_merge($creditRequest->toArray(), [
                 'installments' => $creditRequest->installments,
                 'repayments' => $creditRequest->repayments->map(function ($repayment) {
-                    $repayment->proof_url = $repayment->getFirstMediaUrl('proof_of_payment');
+                    $repayment->proof_url = $repayment->getFirstTemporaryUrl(now()->addMinutes(60), 'proof_of_payment');
 
                     return $repayment;
                 }),

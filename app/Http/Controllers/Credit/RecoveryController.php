@@ -75,7 +75,7 @@ class RecoveryController extends Controller
                     'payment_method' => $repayment->payment_method,
                     'reference' => $repayment->reference,
                     'status' => $repayment->status,
-                    'proof_url' => $repayment->getFirstMediaUrl('proof_of_payment'),
+                    'proof_url' => $repayment->getFirstTemporaryUrl(now()->addMinutes(60), 'proof_of_payment'),
                     'credit_request' => [
                         'id' => $repayment->creditRequest->id,
                         'code' => $repayment->creditRequest->code,
