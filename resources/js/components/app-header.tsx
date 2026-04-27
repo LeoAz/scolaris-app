@@ -62,41 +62,41 @@ const mainNavItems: NavItemWithActive[] = [
         href: adminUsersIndex().url,
         activePath: "/admin",
         icon: ShieldCheck,
-        permission: "admin.users.index",
+        permission: "menu.administration",
     },
     {
         title: "Gestion des dossiers",
         href: creditIndex().url,
         activePath: "/credit",
         icon: FolderOpen,
-        permission: "credit.index",
+        permission: "menu.gestion_dossiers",
     },
     {
         title: "Etudiants & garants",
         href: studentsIndex().url,
         activePath: "/stakeholders",
         icon: Users,
-        permission: "stakeholders.students",
+        permission: "menu.stakeholders",
     },
     {
         title: "Recouvrement",
         href: recoveryIndex().url,
         activePath: "/credit/recovery",
         icon: CircleDollarSign,
-        permission: "credit.recovery.index",
+        permission: "menu.recovery",
     },
     {
         title: "Résiliation",
         href: terminationIndex().url,
         activePath: "/credit/termination-requests",
         icon: UserX,
-        permission: "credit.termination-requests.index",
+        permission: "menu.termination",
     },
     {
         title: "Rapport",
         href: dashboard().url,
         icon: BarChart3,
-        permission: "dashboard",
+        permission: "menu.reports",
     },
 ];
 
@@ -203,9 +203,12 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                         </PopoverContent>
                     </Popover>
                     {/* Logo */}
-                    <div className="flex items-center">
-                        <Link href={dashboard().url} className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        <Link href={dashboard().url} className="flex items-center gap-3">
                             <AppLogo />
+                            <span className="hidden font-bold tracking-tight text-neutral-900 sm:inline-block md:text-xl">
+                                SCOLARIS LOAN APP
+                            </span>
                         </Link>
                     </div>
                 </div>

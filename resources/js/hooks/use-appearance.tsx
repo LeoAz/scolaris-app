@@ -12,13 +12,6 @@ export type UseAppearanceReturn = {
 const listeners = new Set<() => void>();
 let currentAppearance: Appearance = 'system';
 
-const prefersDark = (): boolean => {
-    if (typeof window === 'undefined') {
-        return false;
-    }
-
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-};
 
 const setCookie = (name: string, value: string, days = 365): void => {
     if (typeof document === 'undefined') {
@@ -29,16 +22,9 @@ const setCookie = (name: string, value: string, days = 365): void => {
     document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
 };
 
-const getStoredAppearance = (): Appearance => {
-    if (typeof window === 'undefined') {
-        return 'system';
-    }
 
-    return (localStorage.getItem('appearance') as Appearance) || 'system';
-};
-
-const isDarkMode = (appearance: Appearance): boolean => {
-    return appearance === 'dark' || (appearance === 'system' && prefersDark());
+const isDarkMode = (): boolean => {
+    return false;
 };
 
 const applyTheme = (appearance: Appearance): void => {
@@ -46,7 +32,7 @@ const applyTheme = (appearance: Appearance): void => {
         return;
     }
 
-    const isDark = isDarkMode(appearance);
+    const isDark = isDarkMode();
 
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
@@ -68,22 +54,21 @@ const mediaQuery = (): MediaQueryList | null => {
     return window.matchMedia('(prefers-color-scheme: dark)');
 };
 
-const handleSystemThemeChange = (): void => applyTheme(currentAppearance);
+const handleSystemThemeChange = (): void => applyTheme('light');
 
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
         return;
     }
 
-    if (!localStorage.getItem('appearance')) {
-        localStorage.setItem('appearance', 'system');
-        setCookie('appearance', 'system');
-    }
+    // Force light theme
+    localStorage.setItem('appearance', 'light');
+    setCookie('appearance', 'light');
 
-    currentAppearance = getStoredAppearance();
-    applyTheme(currentAppearance);
+    currentAppearance = 'light';
+    applyTheme('light');
 
-    // Set up system theme change listener
+    // Set up system theme change listener (though it shouldn't matter now)
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);
 }
 
@@ -94,7 +79,7 @@ export function useAppearance(): UseAppearanceReturn {
         () => 'system',
     );
 
-    const resolvedAppearance: ResolvedAppearance = isDarkMode(appearance)
+    const resolvedAppearance: ResolvedAppearance = isDarkMode()
         ? 'dark'
         : 'light';
 
