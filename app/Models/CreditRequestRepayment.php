@@ -32,6 +32,12 @@ class CreditRequestRepayment extends Model implements HasMedia
         'validated_at' => 'datetime',
     ];
 
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('proof_of_payment')
+            ->useDisk('s3');
+    }
+
     public function validatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'validated_by_id');

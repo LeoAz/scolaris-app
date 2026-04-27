@@ -34,7 +34,7 @@ class UploadRepaymentProof implements ShouldQueue
 
         $this->repayment->addMedia($fullPath)
             ->usingFileName($this->originalName)
-            ->toMediaCollection('proofs');
+            ->toMediaCollection('proof_of_payment');
 
         $this->repayment->creditRequest->activities()->create([
             'user_id' => $this->userId,

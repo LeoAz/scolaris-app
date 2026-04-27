@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use App\Models\Traits\HasCountryFilter;
-use App\Jobs\GenerateDocumentJob;
 use App\Enums\CreditRequestStatus;
+use App\Jobs\GenerateDocumentJob;
 use App\Jobs\UploadCreditDocument;
+use App\Models\Traits\HasCountryFilter;
 use Database\Factories\CreditRequestFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -132,6 +132,12 @@ class CreditRequest extends Model implements HasMedia
     public function terminationRequests(): HasMany
     {
         return $this->hasMany(LoanTerminationRequest::class)->latest();
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('documents')
+            ->useDisk('s3');
     }
 
     /**

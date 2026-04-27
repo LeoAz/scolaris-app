@@ -14,10 +14,10 @@ use App\Models\CreditRequestRepayment;
 use App\Models\CreditType;
 use App\Models\Stakeholder;
 use App\Models\User;
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Notifications\CreditRequestCreated;
 use App\Notifications\CreditRequestRejected;
 use App\Notifications\CreditRequestSubmitted;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -593,7 +593,7 @@ class CreditRequestController extends Controller
             'creditRequest' => array_merge($creditRequest->toArray(), [
                 'installments' => $creditRequest->installments,
                 'repayments' => $creditRequest->repayments->map(function ($repayment) {
-                    $repayment->proof_url = $repayment->getFirstMediaUrl('proofs');
+                    $repayment->proof_url = $repayment->getFirstMediaUrl('proof_of_payment');
 
                     return $repayment;
                 }),
