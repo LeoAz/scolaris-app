@@ -206,9 +206,6 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                     <div className="flex items-center gap-3">
                         <Link href={dashboard().url} className="flex items-center gap-3">
                             <AppLogo />
-                            <span className="hidden font-bold tracking-tight text-neutral-900 sm:inline-block md:text-xl">
-                                SCOLARIS LOAN APP
-                            </span>
                         </Link>
                     </div>
                 </div>
