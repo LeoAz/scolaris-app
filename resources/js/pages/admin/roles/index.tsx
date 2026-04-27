@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { AlertCircle, Edit, MoreHorizontal, Plus, Trash, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Edit, MoreHorizontal, Plus, Trash, ShieldCheck, Copy } from 'lucide-react';
 import * as React from 'react';
 
 import { DataTable } from '@/components/admin/data-table';
@@ -94,6 +94,17 @@ export default function RoleIndex({ roles, permissions, filters }: Props) {
         setIsSheetOpen(true);
     };
 
+    const duplicateRole = (role: Role) => {
+        setEditingRole(null);
+        setData({
+            name: `${role.name} (Copie)`,
+            description: role.description || '',
+            permissions: role.permissions.map(p => p.name),
+        });
+        clearErrors();
+        setIsSheetOpen(true);
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -168,6 +179,9 @@ export default function RoleIndex({ roles, permissions, filters }: Props) {
                     <DropdownMenuContent align="end" className="w-[160px]">
                         <DropdownMenuItem onClick={() => openEditSheet(role)}>
                             <Edit className="mr-2 h-4 w-4" /> Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => duplicateRole(role)}>
+                            <Copy className="mr-2 h-4 w-4" /> Dupliquer
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
