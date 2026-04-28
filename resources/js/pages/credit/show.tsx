@@ -534,17 +534,8 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                     <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
                                         {creditRequest.missing_documents && creditRequest.missing_documents.map((doc) => (
                                             <div key={doc.type} className="flex items-center gap-2">
-                                                {doc.is_processing ? (
-                                                    <>
-                                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-red-500/70" />
-                                                        <span className="text-xs font-medium italic text-muted-foreground">{doc.label} (en cours...)</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <XCircle className="h-3.5 w-3.5 text-red-500/70" />
-                                                        <span className="text-xs font-medium">{doc.label}</span>
-                                                    </>
-                                                )}
+                                                <XCircle className="h-3.5 w-3.5 text-red-500/70" />
+                                                <span className="text-xs font-medium">{doc.label}</span>
                                             </div>
                                         ))}
                                     </div>

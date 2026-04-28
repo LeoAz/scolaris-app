@@ -4,10 +4,8 @@ namespace App\Models;
 
 use App\Enums\CreditRequestStatus;
 use App\Jobs\GenerateDocumentJob;
-use App\Jobs\UploadCreditDocument;
 use App\Models\Traits\HasCountryFilter;
 use Database\Factories\CreditRequestFactory;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -183,7 +181,7 @@ class CreditRequest extends Model implements HasMedia
             ->toArray();
 
         // Get documents currently in queue
-        $inQueueTypes = $this->getDocumentsInQueue();
+        $inQueueTypes = [];
 
         $missing = [];
         foreach ($requiredTypes as $type => $label) {
@@ -191,7 +189,7 @@ class CreditRequest extends Model implements HasMedia
                 $missing[] = [
                     'type' => $type,
                     'label' => $label,
-                    'is_processing' => in_array($type, $inQueueTypes),
+                    'is_processing' => false,
                 ];
             }
         }
@@ -204,19 +202,7 @@ class CreditRequest extends Model implements HasMedia
      */
     public function getDocumentsInQueue(): array
     {
-        return \DB::table('jobs')
-            ->where('payload', 'like', '%UploadCreditDocument%')
-            ->where('payload', 'like', '%"id":'.$this->id.',%')
-            ->get()
-            ->map(function ($job) {
-                $payload = json_decode($job->payload, true);
-                $command = unserialize($payload['data']['command'], ['allowed_classes' => [UploadCreditDocument::class, Model\Model::class, Collection::class, CreditRequest::class]]);
-
-                return $command->type ?? null;
-            })
-            ->filter()
-            ->values()
-            ->toArray();
+        return [];
     }
 
     /**

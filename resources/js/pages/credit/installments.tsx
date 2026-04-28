@@ -17,7 +17,6 @@ import {
     X,
     Eye,
     CheckCircle2,
-    Loader2,
 } from 'lucide-react';
 import React from 'react';
 

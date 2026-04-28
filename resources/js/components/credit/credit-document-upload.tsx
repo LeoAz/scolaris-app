@@ -105,7 +105,6 @@ export default function CreditDocumentUpload({ creditRequestId }: CreditDocument
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [fileTypes, setFileTypes] = useState<Record<string, string>>({});
     const [isVerifying, setIsVerifying] = useState(false);
-    const [verificationStep, setVerificationStep] = useState<'uploading' | 'verifying' | 'success'>('uploading');
 
     const [
         { files, isDragging, errors },
@@ -161,19 +160,11 @@ export default function CreditDocumentUpload({ creditRequestId }: CreditDocument
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                setVerificationStep('verifying');
-                // Simuler une vérification S3 pendant 1.5s pour l'effet visuel demandé
-                setTimeout(() => {
-                    setVerificationStep('success');
-                    setTimeout(() => {
-                        setIsModalOpen(false);
-                        setIsVerifying(false);
-                        setVerificationStep('uploading');
-                        clearFiles();
-                        setFileTypes({});
-                        reset();
-                    }, 1000);
-                }, 1500);
+                setIsModalOpen(false);
+                setIsVerifying(false);
+                clearFiles();
+                setFileTypes({});
+                reset();
             },
             onError: () => {
                 setIsVerifying(false);
