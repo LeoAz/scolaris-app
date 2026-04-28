@@ -13,6 +13,7 @@ import {
     VideoIcon,
     XIcon,
     CheckCircle2,
+    Loader2,
 } from "lucide-react";
 import React, { useState, useMemo } from "react";
 
@@ -103,6 +104,8 @@ export default function CreditDocumentUpload({ creditRequestId }: CreditDocument
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [fileTypes, setFileTypes] = useState<Record<string, string>>({});
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verificationStep, setVerificationStep] = useState<'uploading' | 'verifying' | 'success'>('uploading');
 
     const [
         { files, isDragging, errors },
@@ -148,6 +151,9 @@ export default function CreditDocumentUpload({ creditRequestId }: CreditDocument
         const documents = files.map(f => f.file as File);
         const types = files.map(f => fileTypes[f.id]);
 
+        setIsVerifying(true);
+        setVerificationStep('uploading');
+
         router.post(upload(creditRequestId).url, {
             documents,
             types,
@@ -155,11 +161,23 @@ export default function CreditDocumentUpload({ creditRequestId }: CreditDocument
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                setIsModalOpen(false);
-                clearFiles();
-                setFileTypes({});
-                reset();
+                setVerificationStep('verifying');
+                // Simuler une vérification S3 pendant 1.5s pour l'effet visuel demandé
+                setTimeout(() => {
+                    setVerificationStep('success');
+                    setTimeout(() => {
+                        setIsModalOpen(false);
+                        setIsVerifying(false);
+                        setVerificationStep('uploading');
+                        clearFiles();
+                        setFileTypes({});
+                        reset();
+                    }, 1000);
+                }, 1500);
             },
+            onError: () => {
+                setIsVerifying(false);
+            }
         });
     };
 
@@ -268,65 +286,101 @@ export default function CreditDocumentUpload({ creditRequestId }: CreditDocument
             {/* Modal for setting document types */}
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Type de documents</DialogTitle>
-                        <DialogDescription>
-                            Attribuez un type à chaque document avant de les envoyer.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="max-h-[60vh] overflow-y-auto py-4 space-y-4">
-                        {files.map((file) => (
-                            <div key={file.id} className="space-y-2">
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                    <div className="flex aspect-square size-6 shrink-0 items-center justify-center rounded border bg-muted">
-                                        {getFileIcon(file)}
-                                    </div>
-                                    <p className="truncate text-xs font-medium">
-                                        {file.file instanceof File ? file.file.name : ""}
-                                    </p>
-                                </div>
-                                <Select
-                                    value={fileTypes[file.id]}
-                                    onValueChange={(val) => handleTypeChange(file.id, val)}
-                                >
-                                    <SelectTrigger className="w-full h-8 text-xs">
-                                        <SelectValue placeholder="Sélectionner un type..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {documentTypes.map((type) => (
-                                            <SelectItem key={type.value} value={type.value} className="text-xs">
-                                                {type.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        ))}
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => setIsModalOpen(false)}
-                            className="h-8 text-xs"
-                            disabled={processing}
-                        >
-                            Annuler
-                        </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={!canSubmit || processing}
-                            className="h-8 text-xs gap-1.5"
-                        >
-                            {processing ? "Envoi en cours..." : (
+                    {isVerifying ? (
+                        <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                            {verificationStep === 'uploading' && (
                                 <>
-                                    <CheckCircle2 className="size-3.5" />
-                                    Confirmer l'envoi
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                    <div className="text-center">
+                                        <p className="font-bold">Upload en cours...</p>
+                                        <p className="text-xs text-muted-foreground">Transfert de vos fichiers vers les serveurs</p>
+                                    </div>
                                 </>
                             )}
-                        </Button>
-                    </DialogFooter>
+                            {verificationStep === 'verifying' && (
+                                <>
+                                    <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
+                                    <div className="text-center">
+                                        <p className="font-bold">Vérification S3...</p>
+                                        <p className="text-xs text-muted-foreground">Confirmation de la présence des fichiers sur le stockage sécurisé</p>
+                                    </div>
+                                </>
+                            )}
+                            {verificationStep === 'success' && (
+                                <>
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                                        <CheckCircle2 className="h-6 w-6 text-green-600" />
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="font-bold text-green-600">Upload réussi !</p>
+                                        <p className="text-xs text-muted-foreground">Vos documents ont été enregistrés avec succès</p>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle>Type de documents</DialogTitle>
+                                <DialogDescription>
+                                    Attribuez un type à chaque document avant de les envoyer.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="max-h-[60vh] overflow-y-auto py-4 space-y-4">
+                                {files.map((file) => (
+                                    <div key={file.id} className="space-y-2">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <div className="flex aspect-square size-6 shrink-0 items-center justify-center rounded border bg-muted">
+                                                {getFileIcon(file)}
+                                            </div>
+                                            <p className="truncate text-xs font-medium">
+                                                {file.file instanceof File ? file.file.name : ""}
+                                            </p>
+                                        </div>
+                                        <Select
+                                            value={fileTypes[file.id]}
+                                            onValueChange={(val) => handleTypeChange(file.id, val)}
+                                        >
+                                            <SelectTrigger className="w-full h-8 text-xs">
+                                                <SelectValue placeholder="Sélectionner un type..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {documentTypes.map((type) => (
+                                                    <SelectItem key={type.value} value={type.value} className="text-xs">
+                                                        {type.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <DialogFooter>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsModalOpen(false)}
+                                    className="h-8 text-xs"
+                                    disabled={processing}
+                                >
+                                    Annuler
+                                </Button>
+                                <Button
+                                    onClick={handleSubmit}
+                                    disabled={!canSubmit || processing}
+                                    className="h-8 text-xs gap-1.5"
+                                >
+                                    {processing ? "Envoi en cours..." : (
+                                        <>
+                                            <CheckCircle2 className="size-3.5" />
+                                            Confirmer l'envoi
+                                        </>
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>

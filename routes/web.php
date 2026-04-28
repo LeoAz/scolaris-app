@@ -68,6 +68,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('termination-requests/{loanTerminationRequest}/reject', [LoanTerminationRequestController::class, 'reject'])->name('termination-requests.reject');
 
         Route::post('requests/{creditRequest}/documents', [CreditRequestController::class, 'uploadDocument'])->name('documents.upload');
+        Route::get('requests/{creditRequest}/documents/{media}/download', [CreditRequestController::class, 'downloadDocument'])->name('documents.download');
         Route::delete('requests/{creditRequest}/documents/{media}', [CreditRequestController::class, 'deleteDocument'])->name('documents.delete');
 
         Route::get('requests/{creditRequest}/installments', [CreditRequestController::class, 'installments'])->name('installments.index');
