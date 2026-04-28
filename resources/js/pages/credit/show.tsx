@@ -6,7 +6,6 @@ import {
     CheckCircle,
     ChevronDown,
     CreditCard,
-    Download,
     Eye,
     FileText,
     Globe,
@@ -64,7 +63,7 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 
 import credit, { submit, resiliate, reject, summary } from '@/routes/credit';
-import { deleteMethod, download } from '@/routes/credit/documents';
+import { deleteMethod } from '@/routes/credit/documents';
 import terminationRequests from '@/routes/credit/termination-requests/index';
 import type { BreadcrumbItem, CreditRequest, Media, ModelUser } from '@/types';
 
@@ -534,8 +533,17 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                     <div className="grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
                                         {creditRequest.missing_documents && creditRequest.missing_documents.map((doc) => (
                                             <div key={doc.type} className="flex items-center gap-2">
-                                                <XCircle className="h-3.5 w-3.5 text-red-500/70" />
-                                                <span className="text-xs font-medium">{doc.label}</span>
+                                                {doc.is_processing ? (
+                                                    <>
+                                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-red-500/70" />
+                                                        <span className="text-xs font-medium italic text-muted-foreground">{doc.label} (en cours...)</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <XCircle className="h-3.5 w-3.5 text-red-500/70" />
+                                                        <span className="text-xs font-medium">{doc.label}</span>
+                                                    </>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -899,6 +907,10 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                                     <span className="text-[11px] font-medium text-muted-foreground uppercase">Adresse</span>
                                                     <p className="text-sm font-medium">{creditRequest.guarantor.address || '—'}</p>
                                                 </div>
+                                                <div className="space-y-1">
+                                                    <span className="text-[11px] font-medium text-muted-foreground uppercase">Compte Amplitude</span>
+                                                    <p className="text-sm font-mono font-bold text-primary">{creditRequest.guarantor.amplitude_account || '—'}</p>
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
@@ -960,17 +972,12 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild title="Voir">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
                                                         <a href={doc.original_url} target="_blank" rel="noreferrer">
                                                             <Eye className="h-3.5 w-3.5" />
                                                         </a>
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" asChild title="Télécharger">
-                                                        <a href={download({ creditRequest: creditRequest.id, media: doc.id }).url}>
-                                                            <Download className="h-3.5 w-3.5" />
-                                                        </a>
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDocument(doc.id)} title="Supprimer">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteDocument(doc.id)}>
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </Button>
                                                 </div>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Credit;
 use App\Enums\CreditRequestStatus;
 use App\Events\LoanValidated;
 use App\Http\Controllers\Controller;
+use App\Jobs\UploadCreditDocument;
+use App\Jobs\UploadRepaymentProof;
 use App\Models\Country;
 use App\Models\CreditRequest;
 use App\Models\CreditRequestInstallment;
@@ -554,25 +556,21 @@ class CreditRequestController extends Controller
 
         foreach ($request->file('documents') as $index => $file) {
             $type = $request->input('types')[$index];
-            $label = CreditRequest::getRequiredDocumentTypes()[$type] ?? $type;
 
-            $creditRequest->addMedia($file)
-                ->usingFileName($file->getClientOriginalName())
-                ->withCustomProperties(['type' => $type])
-                ->toMediaCollection('documents');
+            // Store file temporarily
+            $tempPath = $file->store('temp-uploads', 'local');
 
-            $creditRequest->activities()->create([
-                'user_id' => auth()->id(),
-                'action' => 'document_upload',
-                'description' => "Ajout du document : {$label}",
-                'properties' => [
-                    'type' => $type,
-                    'filename' => $file->getClientOriginalName(),
-                ],
-            ]);
+            // Dispatch job
+            UploadCreditDocument::dispatch(
+                $creditRequest,
+                $tempPath,
+                $file->getClientOriginalName(),
+                $type,
+                auth()->id()
+            );
         }
 
-        return back()->with('success', 'Documents ajoutés avec succès.');
+        return back()->with('success', 'Documents mis en file d\'attente pour upload.');
     }
 
     public function deleteDocument(CreditRequest $creditRequest, $mediaId)
@@ -591,13 +589,6 @@ class CreditRequestController extends Controller
         $media->delete();
 
         return back()->with('success', 'Document supprimé avec succès.');
-    }
-
-    public function downloadDocument(CreditRequest $creditRequest, $mediaId)
-    {
-        $media = $creditRequest->media()->findOrFail($mediaId);
-
-        return response()->download($media->getPath(), $media->file_name);
     }
 
     public function installments(CreditRequest $creditRequest): Response
@@ -662,11 +653,17 @@ class CreditRequestController extends Controller
                 'status' => 'pending',
             ]);
 
-            // Attach proof of payment
+            // Store file temporarily
             $file = $request->file('proof');
-            $repayment->addMedia($file)
-                ->usingFileName($file->getClientOriginalName())
-                ->toMediaCollection('proof_of_payment');
+            $tempPath = $file->store('temp-proofs', 'local');
+
+            // Dispatch job
+            UploadRepaymentProof::dispatch(
+                $repayment,
+                $tempPath,
+                $file->getClientOriginalName(),
+                auth()->id()
+            );
 
             $creditRequest->activities()->create([
                 'user_id' => auth()->id(),

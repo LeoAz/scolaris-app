@@ -15,8 +15,7 @@ import {
     ExternalLink,
     Check,
     X,
-    Eye,
-    CheckCircle2,
+    Eye
 } from 'lucide-react';
 import React from 'react';
 
@@ -92,8 +91,6 @@ interface InstallmentsProps {
 export default function Installments({ creditRequest, nextInstallment }: Omit<InstallmentsProps, 'breadcrumbs'>) {
     const [selectedInstallment, setSelectedInstallment] = React.useState<CreditRequestInstallment | null>(null);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = React.useState(false);
-    const [isVerifying, setIsVerifying] = React.useState(false);
-    const [verificationStep, setVerificationStep] = React.useState<'uploading' | 'verifying' | 'success'>('uploading');
     const [selectedRepayment, setSelectedRepayment] = React.useState<CreditRequestRepayment | null>(null);
     const [isValidationSheetOpen, setIsValidationSheetOpen] = React.useState(false);
 
@@ -131,9 +128,6 @@ export default function Installments({ creditRequest, nextInstallment }: Omit<In
             return;
         }
 
-        setIsVerifying(true);
-        setVerificationStep('uploading');
-
         post(credit.installments.repayments.store({
             creditRequest: creditRequest.id,
             installment: selectedInstallment.id
@@ -141,22 +135,10 @@ export default function Installments({ creditRequest, nextInstallment }: Omit<In
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
-                setVerificationStep('verifying');
-                // Simuler une vérification S3 pendant 1.5s
-                setTimeout(() => {
-                    setVerificationStep('success');
-                    setTimeout(() => {
-                        setIsPaymentModalOpen(false);
-                        setIsVerifying(false);
-                        setVerificationStep('uploading');
-                        reset();
-                        setSelectedInstallment(null);
-                    }, 1000);
-                }, 1500);
+                setIsPaymentModalOpen(false);
+                reset();
+                setSelectedInstallment(null);
             },
-            onError: () => {
-                setIsVerifying(false);
-            }
         });
     };
 
@@ -481,145 +463,109 @@ export default function Installments({ creditRequest, nextInstallment }: Omit<In
             {/* Payment Modal */}
             <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
                 <DialogContent className="sm:max-w-[500px]">
-                    {isVerifying ? (
-                        <div className="flex flex-col items-center justify-center py-10 space-y-4">
-                            {verificationStep === 'uploading' && (
-                                <>
-                                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                                    <div className="text-center">
-                                        <p className="font-bold">Upload en cours...</p>
-                                        <p className="text-xs text-muted-foreground">Transfert de la preuve vers les serveurs</p>
-                                    </div>
-                                </>
-                            )}
-                            {verificationStep === 'verifying' && (
-                                <>
-                                    <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
-                                    <div className="text-center">
-                                        <p className="font-bold">Vérification S3...</p>
-                                        <p className="text-xs text-muted-foreground">Confirmation de la présence du fichier sur le stockage sécurisé</p>
-                                    </div>
-                                </>
-                            )}
-                            {verificationStep === 'success' && (
-                                <>
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                                        <CheckCircle2 className="h-6 w-6 text-green-600" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="font-bold text-green-600">Enregistrement réussi !</p>
-                                        <p className="text-xs text-muted-foreground">Le règlement a été enregistré avec succès</p>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <DialogHeader>
-                                <DialogTitle>Enregistrer un règlement</DialogTitle>
-                                <DialogDescription>
-                                    Confirmation du paiement pour l'échéance n°{selectedInstallment?.installment_number} du {selectedInstallment && formatDate(selectedInstallment.due_date)}.
-                                </DialogDescription>
-                            </DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>Enregistrer un règlement</DialogTitle>
+                        <DialogDescription>
+                            Confirmation du paiement pour l'échéance n°{selectedInstallment?.installment_number} du {selectedInstallment && formatDate(selectedInstallment.due_date)}.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                            <form onSubmit={handleSubmitPayment} className="space-y-4 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="amount">Montant réglé</Label>
-                                        <div className="relative">
-                                            <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="amount"
-                                                type="number"
-                                                step="0.01"
-                                                value={data.amount}
-                                                onChange={(e) => setData('amount', e.target.value)}
-                                                className="pl-9 font-semibold"
-                                                required
-                                            />
-                                        </div>
-                                        {errors.amount && <p className="text-xs text-destructive">{errors.amount}</p>}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="repayment_date">Date du règlement</Label>
-                                        <Input
-                                            id="repayment_date"
-                                            type="date"
-                                            value={data.repayment_date}
-                                            onChange={(e) => setData('repayment_date', e.target.value)}
-                                            required
-                                        />
-                                        {errors.repayment_date && <p className="text-xs text-destructive">{errors.repayment_date}</p>}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="payment_method">Moyen de paiement</Label>
-                                    <Select
-                                        value={data.payment_method}
-                                        onValueChange={(value) => setData('payment_method', value)}
-                                    >
-                                        <SelectTrigger id="payment_method">
-                                            <SelectValue placeholder="Sélectionner un mode" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="virement">Virement bancaire</SelectItem>
-                                            <SelectItem value="especes">Espèces</SelectItem>
-                                            <SelectItem value="cheque">Chèque</SelectItem>
-                                            <SelectItem value="mobile_money">Mobile Money</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.payment_method && <p className="text-xs text-destructive">{errors.payment_method}</p>}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="reference">Référence de transaction</Label>
+                    <form onSubmit={handleSubmitPayment} className="space-y-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="amount">Montant réglé</Label>
+                                <div className="relative">
+                                    <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <Input
-                                        id="reference"
-                                        value={data.reference}
-                                        onChange={(e) => setData('reference', e.target.value)}
-                                        placeholder="N° de virement, chèque, etc."
-                                    />
-                                    {errors.reference && <p className="text-xs text-destructive">{errors.reference}</p>}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="proof">Preuve de paiement (Obligatoire)</Label>
-                                    <Input
-                                        id="proof"
-                                        type="file"
-                                        onChange={(e) => setData('proof', e.target.files?.[0] || null)}
+                                        id="amount"
+                                        type="number"
+                                        step="0.01"
+                                        value={data.amount}
+                                        onChange={(e) => setData('amount', e.target.value)}
+                                        className="pl-9 font-semibold"
                                         required
                                     />
-                                    <p className="text-[10px] text-muted-foreground">Format accepté : PDF, JPG, PNG (Max 10Mo)</p>
-                                    {errors.proof && <p className="text-xs text-destructive">{errors.proof}</p>}
                                 </div>
+                                {errors.amount && <p className="text-xs text-destructive">{errors.amount}</p>}
+                            </div>
 
-                                <div className="space-y-2">
-                                    <Label htmlFor="notes">Notes</Label>
-                                    <Textarea
-                                        id="notes"
-                                        value={data.notes}
-                                        onChange={(e) => setData('notes', e.target.value)}
-                                        placeholder="Observations éventuelles..."
-                                        className="resize-none"
-                                    />
-                                    {errors.notes && <p className="text-xs text-destructive">{errors.notes}</p>}
-                                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="repayment_date">Date du règlement</Label>
+                                <Input
+                                    id="repayment_date"
+                                    type="date"
+                                    value={data.repayment_date}
+                                    onChange={(e) => setData('repayment_date', e.target.value)}
+                                    required
+                                />
+                                {errors.repayment_date && <p className="text-xs text-destructive">{errors.repayment_date}</p>}
+                            </div>
+                        </div>
 
-                                <DialogFooter className="pt-4">
-                                    <Button type="button" variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
-                                        Annuler
-                                    </Button>
-                                    <Button type="submit" disabled={processing} className="bg-blue-600 hover:bg-blue-700">
-                                        {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        Soumettre le règlement
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </>
-                    )}
+                        <div className="space-y-2">
+                            <Label htmlFor="payment_method">Moyen de paiement</Label>
+                            <Select
+                                value={data.payment_method}
+                                onValueChange={(value) => setData('payment_method', value)}
+                            >
+                                <SelectTrigger id="payment_method">
+                                    <SelectValue placeholder="Sélectionner un mode" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="virement">Virement bancaire</SelectItem>
+                                    <SelectItem value="especes">Espèces</SelectItem>
+                                    <SelectItem value="cheque">Chèque</SelectItem>
+                                    <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {errors.payment_method && <p className="text-xs text-destructive">{errors.payment_method}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="reference">Référence de transaction</Label>
+                            <Input
+                                id="reference"
+                                value={data.reference}
+                                onChange={(e) => setData('reference', e.target.value)}
+                                placeholder="N° de virement, chèque, etc."
+                            />
+                            {errors.reference && <p className="text-xs text-destructive">{errors.reference}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="proof">Preuve de paiement (Obligatoire)</Label>
+                            <Input
+                                id="proof"
+                                type="file"
+                                onChange={(e) => setData('proof', e.target.files?.[0] || null)}
+                                required
+                            />
+                            <p className="text-[10px] text-muted-foreground">Format accepté : PDF, JPG, PNG (Max 10Mo)</p>
+                            {errors.proof && <p className="text-xs text-destructive">{errors.proof}</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="notes">Notes</Label>
+                            <Textarea
+                                id="notes"
+                                value={data.notes}
+                                onChange={(e) => setData('notes', e.target.value)}
+                                placeholder="Observations éventuelles..."
+                                className="resize-none"
+                            />
+                            {errors.notes && <p className="text-xs text-destructive">{errors.notes}</p>}
+                        </div>
+
+                        <DialogFooter className="pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsPaymentModalOpen(false)}>
+                                Annuler
+                            </Button>
+                            <Button type="submit" disabled={processing} className="bg-blue-600 hover:bg-blue-700">
+                                {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Soumettre le règlement
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
 

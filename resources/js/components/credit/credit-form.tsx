@@ -447,6 +447,15 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                     onChange={(e) => setData('guarantor', { ...data.guarantor, address: e.target.value })}
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="guarantor_amplitude">Compte Amplitude</Label>
+                                <Input
+                                    id="guarantor_amplitude"
+                                    value={data.guarantor.amplitude_account}
+                                    onChange={(e) => setData('guarantor', { ...data.guarantor, amplitude_account: e.target.value })}
+                                    placeholder="Numéro de compte Amplitude"
+                                />
+                            </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
@@ -522,6 +531,7 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                     <p><span className="text-muted-foreground">Nom :</span> {data.guarantor.first_name} {data.guarantor.last_name}</p>
                                     <p><span className="text-muted-foreground">Pièce :</span> {data.guarantor.id_card_type} - {data.guarantor.id_card_number}</p>
                                     <p><span className="text-muted-foreground">Email :</span> {data.guarantor.email}</p>
+                                    <p><span className="text-muted-foreground">Compte Amplitude :</span> <span className="font-mono font-medium">{data.guarantor.amplitude_account || 'N/A'}</span></p>
                                     <p><span className="text-muted-foreground">Profession :</span> {data.guarantor.profession}</p>
                                 </div>
                             </div>
