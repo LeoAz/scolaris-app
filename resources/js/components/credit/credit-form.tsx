@@ -277,7 +277,7 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="student_email">Email</Label>
+                                <Label htmlFor="student_email">Email <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="student_email"
                                     type="email"
@@ -435,13 +435,14 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="guarantor_email">Email du Garant</Label>
+                                <Label htmlFor="guarantor_email">Email du Garant <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="guarantor_email"
                                     type="email"
                                     value={data.guarantor.email}
                                     onChange={(e) => setData('guarantor', { ...data.guarantor, email: e.target.value })}
                                 />
+                                {errors['guarantor.email'] && <p className="text-sm text-destructive">{errors['guarantor.email']}</p>}
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="guarantor_whatsapp">Numéro WhatsApp</Label>

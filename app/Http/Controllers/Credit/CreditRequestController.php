@@ -136,12 +136,12 @@ class CreditRequestController extends Controller
         $user = $request->user();
         if (! $user->hasFullAccessToCredits()) {
             $allowedCreditTypeIds = $user->creditTypes()->pluck('credit_types.id')->toArray();
-            if (! in_array($request->credit_type_id, $allowedCreditTypeIds)) {
+            if (! in_array($request->input('credit_type_id'), $allowedCreditTypeIds)) {
                 abort(403, 'Vous n\'êtes pas autorisé à créer ce type de dossier.');
             }
 
             $allowedCountryIds = $user->countries()->pluck('countries.id')->toArray();
-            if (! in_array($request->country_id, $allowedCountryIds)) {
+            if (! in_array($request->input('country_id'), $allowedCountryIds)) {
                 abort(403, 'Vous n\'êtes pas autorisé à créer un dossier pour ce pays.');
             }
         }
@@ -158,7 +158,7 @@ class CreditRequestController extends Controller
             // Student info
             'student.last_name' => 'required|string|max:255',
             'student.first_name' => 'required|string|max:255',
-            'student.email' => 'required|email|max:255',
+            'student.email' => 'required|email|max:255|unique:stakeholders,email',
             'student.whatsapp_number' => 'nullable|string|max:255',
             'student.address' => 'nullable|string|max:255',
             'student.profession' => 'nullable|string|max:255',
@@ -170,12 +170,15 @@ class CreditRequestController extends Controller
             'guarantor.id' => 'nullable|exists:stakeholders,id',
             'guarantor.last_name' => 'nullable|string|max:255',
             'guarantor.first_name' => 'nullable|string|max:255',
-            'guarantor.email' => 'nullable|email|max:255',
+            'guarantor.email' => 'required|email|max:255|unique:stakeholders,email',
             'guarantor.whatsapp_number' => 'nullable|string|max:255',
             'guarantor.address' => 'nullable|string|max:255',
             'guarantor.profession' => 'nullable|string|max:255',
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
+        ], [
+            'student.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
+            'guarantor.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -291,7 +294,7 @@ class CreditRequestController extends Controller
             'student.id' => 'required|exists:stakeholders,id',
             'student.last_name' => 'required|string|max:255',
             'student.first_name' => 'required|string|max:255',
-            'student.email' => 'required|email|max:255',
+            'student.email' => 'required|email|max:255|unique:stakeholders,email,'.$request->input('student.id'),
             'student.amplitude_account' => 'nullable|string|max:255',
             'student.id_card_number' => 'nullable|string|max:255',
             'student.id_card_type' => 'nullable|string|max:255',
@@ -300,8 +303,12 @@ class CreditRequestController extends Controller
             'guarantor.id' => 'nullable|exists:stakeholders,id',
             'guarantor.last_name' => 'nullable|string|max:255',
             'guarantor.first_name' => 'nullable|string|max:255',
+            'guarantor.email' => 'required|email|max:255|unique:stakeholders,email,'.$request->input('guarantor.id'),
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
+        ], [
+            'student.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
+            'guarantor.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
         ]);
 
         DB::transaction(function () use ($request, $creditRequest) {
