@@ -316,15 +316,30 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
 
                     <div className="flex items-center gap-3">
                         {(creditRequest.status === 'valider' || creditRequest.status === 'cloturer' || creditRequest.status === 'resilie') && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-9 gap-2"
-                                onClick={() => router.get(credit.installments.index({ creditRequest: creditRequest.id }).url)}
-                            >
-                                <CreditCard className="h-4 w-4" />
-                                <span>Échéancier</span>
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-9 gap-2"
+                                    onClick={() => router.get(credit.installments.index({ creditRequest: creditRequest.id }).url)}
+                                >
+                                    <CreditCard className="h-4 w-4" />
+                                    <span>Échéancier</span>
+                                </Button>
+
+                                {creditRequest.status === 'valider' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9 gap-2"
+                                        onClick={handleRegenerateDocument}
+                                        disabled={submitting}
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        <span>Régénérer le contrat</span>
+                                    </Button>
+                                )}
+                            </div>
                         )}
 
                         <DropdownMenu>
@@ -367,16 +382,10 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                 </DropdownMenuItem>
 
                                 {creditRequest.status === 'valider' && (
-                                    <>
-                                        <DropdownMenuItem onClick={() => handleAction('regenerate')} className="cursor-pointer">
-                                            <FileText className="mr-2 h-4 w-4" />
-                                            <span>Régénérer le contrat</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleAction('cloturer')} className="cursor-pointer text-gray-600 focus:text-gray-600">
-                                            <XCircle className="mr-2 h-4 w-4" />
-                                            <span>Clôturer le dossier</span>
-                                        </DropdownMenuItem>
-                                    </>
+                                    <DropdownMenuItem onClick={() => handleAction('cloturer')} className="cursor-pointer text-gray-600 focus:text-gray-600">
+                                        <XCircle className="mr-2 h-4 w-4" />
+                                        <span>Clôturer le dossier</span>
+                                    </DropdownMenuItem>
                                 )}
 
                                 <DropdownMenuSeparator />
