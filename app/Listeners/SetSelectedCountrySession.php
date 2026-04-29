@@ -29,6 +29,9 @@ class SetSelectedCountrySession
             if ($country) {
                 session(['selected_country_id' => $country->id]);
             }
+        } else {
+            // If no country is selected (allowed for admins), we clear any previous selection
+            session()->forget('selected_country_id');
         }
     }
 }

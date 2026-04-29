@@ -287,7 +287,7 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                 {errors['student.email'] && <p className="text-sm text-destructive">{errors['student.email']}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="student_whatsapp">Numéro WhatsApp</Label>
+                                <Label htmlFor="student_whatsapp">Numéro WhatsApp <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="student_whatsapp"
                                     value={data.student.whatsapp_number}
@@ -435,7 +435,7 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label htmlFor="guarantor_email">Email du Garant <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="guarantor_email">Email du Garant</Label>
                                 <Input
                                     id="guarantor_email"
                                     type="email"
@@ -445,12 +445,13 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                 {errors['guarantor.email'] && <p className="text-sm text-destructive">{errors['guarantor.email']}</p>}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="guarantor_whatsapp">Numéro WhatsApp</Label>
+                                <Label htmlFor="guarantor_whatsapp">Numéro WhatsApp <span className="text-destructive">*</span></Label>
                                 <Input
                                     id="guarantor_whatsapp"
                                     value={data.guarantor.whatsapp_number}
                                     onChange={(e) => setData('guarantor', { ...data.guarantor, whatsapp_number: e.target.value })}
                                 />
+                                {errors['guarantor.whatsapp_number'] && <p className="text-sm text-destructive">{errors['guarantor.whatsapp_number']}</p>}
                             </div>
                         </div>
 

@@ -23,7 +23,7 @@ test('un utilisateur peut se connecter avec son email, son pays et son mot de pa
         'password' => 'password123',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect('/credit/requests');
     $this->assertAuthenticatedAs($user);
 });
 
@@ -42,12 +42,12 @@ test('un utilisateur peut se connecter avec son pseudo, son pays et son mot de p
         'password' => 'password123',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect('/credit/requests');
     $this->assertAuthenticatedAs($user);
 });
 
 test('un administrateur peut se connecter sans pays', function () {
-    $role = Role::create(['name' => 'Administrateur']);
+    $role = Role::firstOrCreate(['name' => 'Administrateur']);
     $user = User::factory()->create([
         'email' => 'admin@example.com',
         'password' => Hash::make('password123'),
@@ -60,8 +60,60 @@ test('un administrateur peut se connecter sans pays', function () {
         'password' => 'password123',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect('/credit/requests');
     $this->assertAuthenticatedAs($user);
+});
+
+test('un super admin peut se connecter sans pays', function () {
+    $role = Role::firstOrCreate(['name' => 'Super admin']);
+    $user = User::factory()->create([
+        'email' => 'superadmin@example.com',
+        'password' => Hash::make('password123'),
+    ]);
+    $user->assignRole($role);
+
+    $response = $this->post('/login', [
+        'country' => '', // Pas de pays
+        'email' => 'superadmin@example.com',
+        'password' => 'password123',
+    ]);
+
+    $response->assertRedirect('/credit/requests');
+    $this->assertAuthenticatedAs($user);
+});
+
+test('un super administrateur peut se connecter sans pays', function () {
+    $role = Role::firstOrCreate(['name' => 'Super Administrateur']);
+    $user = User::factory()->create([
+        'email' => 'superadmin2@example.com',
+        'password' => Hash::make('password123'),
+    ]);
+    $user->assignRole($role);
+
+    $response = $this->post('/login', [
+        'country' => '', // Pas de pays
+        'email' => 'superadmin2@example.com',
+        'password' => 'password123',
+    ]);
+
+    $response->assertRedirect('/credit/requests');
+    $this->assertAuthenticatedAs($user);
+});
+
+test('un utilisateur standard ne peut pas se connecter sans pays', function () {
+    $user = User::factory()->create([
+        'email' => 'user@example.com',
+        'password' => Hash::make('password123'),
+    ]);
+
+    $response = $this->post('/login', [
+        'country' => '', // Pas de pays
+        'email' => 'user@example.com',
+        'password' => 'password123',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+    $this->assertGuest();
 });
 
 test('un super administrateur peut se connecter avec n\'importe quel pays', function () {
@@ -79,7 +131,7 @@ test('un super administrateur peut se connecter avec n\'importe quel pays', func
         'password' => 'password123',
     ]);
 
-    $response->assertRedirect('/dashboard');
+    $response->assertRedirect('/credit/requests');
     $this->assertAuthenticatedAs($user);
 });
 

@@ -159,7 +159,7 @@ class CreditRequestController extends Controller
             'student.last_name' => 'required|string|max:255',
             'student.first_name' => 'required|string|max:255',
             'student.email' => 'required|email|max:255|unique:stakeholders,email',
-            'student.whatsapp_number' => 'nullable|string|max:255',
+            'student.whatsapp_number' => 'required|string|max:255',
             'student.address' => 'nullable|string|max:255',
             'student.profession' => 'nullable|string|max:255',
             'student.amplitude_account' => 'nullable|string|max:255',
@@ -170,8 +170,8 @@ class CreditRequestController extends Controller
             'guarantor.id' => 'nullable|exists:stakeholders,id',
             'guarantor.last_name' => 'nullable|string|max:255',
             'guarantor.first_name' => 'nullable|string|max:255',
-            'guarantor.email' => 'required|email|max:255|unique:stakeholders,email',
-            'guarantor.whatsapp_number' => 'nullable|string|max:255',
+            'guarantor.email' => 'nullable|email|max:255|unique:stakeholders,email',
+            'guarantor.whatsapp_number' => 'required|string|max:255',
             'guarantor.address' => 'nullable|string|max:255',
             'guarantor.profession' => 'nullable|string|max:255',
             'guarantor.id_card_number' => 'nullable|string|max:255',
@@ -194,6 +194,15 @@ class CreditRequestController extends Controller
                 if ($request->filled('guarantor.id')) {
                     $guarantor = Stakeholder::findOrFail($request->input('guarantor.id'));
                     $guarantor->update(array_merge($request->guarantor, ['student_id' => $student->id]));
+                    $guarantorId = $guarantor->id;
+                } elseif ($request->filled('guarantor.email')) {
+                    $guarantor = Stakeholder::updateOrCreate(
+                        ['email' => $request->input('guarantor.email')],
+                        array_merge($request->guarantor, [
+                            'type' => 'guarantor',
+                            'student_id' => $student->id,
+                        ])
+                    );
                     $guarantorId = $guarantor->id;
                 } else {
                     $guarantor = Stakeholder::create(array_merge($request->guarantor, [
@@ -295,6 +304,7 @@ class CreditRequestController extends Controller
             'student.last_name' => 'required|string|max:255',
             'student.first_name' => 'required|string|max:255',
             'student.email' => 'required|email|max:255|unique:stakeholders,email,'.$request->input('student.id'),
+            'student.whatsapp_number' => 'required|string|max:255',
             'student.amplitude_account' => 'nullable|string|max:255',
             'student.id_card_number' => 'nullable|string|max:255',
             'student.id_card_type' => 'nullable|string|max:255',
@@ -303,7 +313,8 @@ class CreditRequestController extends Controller
             'guarantor.id' => 'nullable|exists:stakeholders,id',
             'guarantor.last_name' => 'nullable|string|max:255',
             'guarantor.first_name' => 'nullable|string|max:255',
-            'guarantor.email' => 'required|email|max:255|unique:stakeholders,email,'.$request->input('guarantor.id'),
+            'guarantor.email' => 'nullable|email|max:255|unique:stakeholders,email,'.$request->input('guarantor.id'),
+            'guarantor.whatsapp_number' => 'required|string|max:255',
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
         ], [
