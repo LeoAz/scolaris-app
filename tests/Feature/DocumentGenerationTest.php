@@ -3,11 +3,73 @@
 use App\Models\CreditRequest;
 use App\Models\CreditType;
 use App\Models\Stakeholder;
+use App\Models\User;
 use App\Services\DocumentGeneratorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
+
+test('only authorized users can regenerate contract', function () {
+    // 1. Créer les rôles
+    $superAdminRole = Role::create(['name' => 'Super admin']);
+    $agentRole = Role::create(['name' => 'Agent']);
+
+    // 2. Créer les utilisateurs
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole($superAdminRole);
+
+    $validator = User::factory()->create();
+    $validator->assignRole($agentRole);
+
+    $otherUser = User::factory()->create();
+    $otherUser->assignRole($agentRole);
+
+    // 3. Créer la demande de crédit validée
+    $creditRequest = CreditRequest::factory()->create([
+        'status' => 'valider',
+        'validated_by_id' => $validator->id,
+    ]);
+
+    // 4. Vérifier les permissions
+    expect($superAdmin->can('regenerateContract', $creditRequest))->toBeTrue();
+    expect($validator->can('regenerateContract', $creditRequest))->toBeTrue();
+    expect($otherUser->can('regenerateContract', $creditRequest))->toBeFalse();
+
+    // 5. Test avec statut différent
+    $creditRequest->status = 'soumis';
+    $creditRequest->save();
+
+    expect($validator->can('regenerateContract', $creditRequest))->toBeFalse();
+});
+
+test('only authorized users can view loan contract in document list', function () {
+    // 1. Créer les rôles
+    $superAdminRole = Role::create(['name' => 'Super admin']);
+    $agentRole = Role::create(['name' => 'Agent']);
+
+    // 2. Créer les utilisateurs
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole($superAdminRole);
+
+    $validator = User::factory()->create();
+    $validator->assignRole($agentRole);
+
+    $otherUser = User::factory()->create();
+    $otherUser->assignRole($agentRole);
+
+    // 3. Créer la demande de crédit
+    $creditRequest = CreditRequest::factory()->create([
+        'status' => 'valider',
+        'validated_by_id' => $validator->id,
+    ]);
+
+    // 4. Vérifier viewContract permission
+    expect($superAdmin->can('viewContract', $creditRequest))->toBeTrue();
+    expect($validator->can('viewContract', $creditRequest))->toBeTrue();
+    expect($otherUser->can('viewContract', $creditRequest))->toBeFalse();
+});
 
 test('document generator service replaces placeholders in docx', function () {
     // 1. Préparer les données

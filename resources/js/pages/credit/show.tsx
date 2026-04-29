@@ -327,7 +327,7 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                     <span>Échéancier</span>
                                 </Button>
 
-                                {creditRequest.status === 'valider' && (
+                                {(creditRequest.status === 'valider' && (creditRequest as any).can_regenerate_contract) && (
                                     <Button
                                         variant="outline"
                                         size="sm"

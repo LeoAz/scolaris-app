@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\CreditRequestStatus;
 use App\Models\CreditRequest;
 use App\Models\User;
 
@@ -37,6 +38,34 @@ class CreditRequestPolicy
     public function update(User $user, CreditRequest $creditRequest): bool
     {
         return $user->canAccessCreditRequest($creditRequest);
+    }
+
+    /**
+     * Determine whether the user can regenerate the loan contract.
+     */
+    public function regenerateContract(User $user, CreditRequest $creditRequest): bool
+    {
+        if ($creditRequest->status->value !== CreditRequestStatus::VALIDER->value) {
+            return false;
+        }
+
+        if ($user->hasAnyRole(['Super admin', 'Administrateur', 'Super Administrateur'])) {
+            return true;
+        }
+
+        return $creditRequest->validated_by_id === $user->id;
+    }
+
+    /**
+     * Determine whether the user can view the loan contract.
+     */
+    public function viewContract(User $user, CreditRequest $creditRequest): bool
+    {
+        if ($user->hasAnyRole(['Super admin', 'Administrateur', 'Super Administrateur'])) {
+            return true;
+        }
+
+        return $creditRequest->validated_by_id === $user->id;
     }
 
     /**

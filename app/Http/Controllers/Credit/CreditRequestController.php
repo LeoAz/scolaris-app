@@ -292,9 +292,20 @@ class CreditRequestController extends Controller implements HasMiddleware
 
         $creditRequest->load(['creditType', 'student', 'guarantor', 'country', 'creator', 'validator', 'rejector', 'media']);
 
-        $creditRequest->media->each(function ($media) {
+        $user = auth()->user();
+        $canViewContract = $user->can('viewContract', $creditRequest);
+
+        $filteredMedia = $creditRequest->media->filter(function ($media) use ($canViewContract) {
+            $type = $media->getCustomProperty('type');
+
+            if ($type === 'loan_contract' && ! $canViewContract) {
+                return false;
+            }
+
             $media->setAttribute('original_url', $media->getTemporaryUrl(now()->addMinutes(60)));
-        });
+
+            return true;
+        })->values();
 
         $activities = $creditRequest->activities()
             ->with('user')
@@ -306,8 +317,9 @@ class CreditRequestController extends Controller implements HasMiddleware
                 'is_complete' => $creditRequest->isComplete(),
                 'missing_documents' => $creditRequest->getMissingDocuments(),
                 'required_document_types' => CreditRequest::getRequiredDocumentTypes(),
-                'media' => $creditRequest->media,
+                'media' => $filteredMedia,
                 'activities' => Inertia::merge(fn () => $activities),
+                'can_regenerate_contract' => $user->can('regenerateContract', $creditRequest),
             ]),
             'breadcrumbs' => [
                 ['title' => 'Gestion des dossiers', 'href' => '/credit/requests'],
@@ -389,7 +401,7 @@ class CreditRequestController extends Controller implements HasMiddleware
 
     public function regenerateDocument(Request $request, CreditRequest $creditRequest): RedirectResponse
     {
-        $this->authorize('update', $creditRequest);
+        $this->authorize('regenerateContract', $creditRequest);
 
         // Supprime l'ancien contrat s'il existe
         $existing = $creditRequest->media()
@@ -404,7 +416,7 @@ class CreditRequestController extends Controller implements HasMiddleware
 
         $creditRequest->generateDocument(
             'loan_contract.docx',
-            'contrat_de_pret_' . strtolower($creditRequest->code) . '.pdf',
+            'contrat_de_pret_'.strtolower($creditRequest->code).'.pdf',
             [
                 'type' => 'loan_contract',
                 'user_id' => auth()->id(),

@@ -164,6 +164,7 @@ class CreditRequest extends Model implements HasMedia
             'passport_etudiant' => 'Passeport de l\'étudiant',
             'cni_passport_garant' => 'CNI ou passeport du garant',
             'ordre_virement' => 'Ordre de virement',
+            'loan_contract' => 'Accord de prêt (Contrat)',
         ];
     }
 
