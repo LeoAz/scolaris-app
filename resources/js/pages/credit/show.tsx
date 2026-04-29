@@ -89,7 +89,6 @@ const documentTypes = [
     { value: 'recu_apport_initial', label: "Reçu de l'apport initial" },
     { value: 'passport_etudiant', label: "Passeport de l'étudiant" },
     { value: 'cni_passport_garant', label: 'CNI ou passeport du garant' },
-    { value: 'certificat_residence', label: 'Certificat de résidence' },
     { value: 'ordre_virement', label: 'Ordre de virement' },
     { value: 'other', label: 'Autre' },
 ];

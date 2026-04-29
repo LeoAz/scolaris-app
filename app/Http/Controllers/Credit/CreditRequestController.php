@@ -21,14 +21,28 @@ use App\Traits\NotifiesStakeholders;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
-use Inertia\Inertia;
-use Inertia\Response;
 
-class CreditRequestController extends Controller
+class CreditRequestController extends Controller implements HasMiddleware
 {
     use NotifiesStakeholders;
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:viewAny,'.CreditRequest::class, only: ['index']),
+            new Middleware('can:create,'.CreditRequest::class, only: ['create', 'store']),
+            new Middleware('can:view,creditRequest', only: ['show', 'summary', 'installments']),
+            new Middleware('can:update,creditRequest', only: ['edit', 'update', 'uploadDocument']),
+            new Middleware('can:delete,creditRequest', only: ['destroy']),
+        ];
+    }
+
+    public function __construct() {}
 
     public function index(Request $request): Response
     {
@@ -587,6 +601,9 @@ class CreditRequestController extends Controller
 
     public function uploadDocument(Request $request, CreditRequest $creditRequest)
     {
+        info('Policy check directly: '.(auth()->user()?->can('update', $creditRequest) ? 'YES' : 'NO'));
+        Gate::authorize('update', $creditRequest);
+
         $request->validate([
             'documents' => 'required|array',
             'documents.*' => 'required|file|max:10240',

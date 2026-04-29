@@ -10,6 +10,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -20,14 +22,23 @@ beforeEach(function () {
 
 test('it dispatches an upload job for each document', function () {
     $user = User::factory()->create();
+    $role = Role::findOrCreate('Super admin');
+    $user->assignRole($role);
     $country = Country::factory()->create(['code' => 'FR']);
+    $user->countries()->attach($country);
     $student = Stakeholder::factory()->create(['type' => 'student', 'last_name' => 'Doe', 'first_name' => 'John']);
     $creditType = CreditType::factory()->create();
+    $user->creditTypes()->attach($creditType);
+
+    // Ensure the permission exists (middleware CheckRoutePermission needs it)
+    Permission::findOrCreate('credit.documents.upload');
+    $role->givePermissionTo('credit.documents.upload');
 
     $creditRequest = CreditRequest::factory()->create([
         'country_id' => $country->id,
         'student_id' => $student->id,
         'credit_type_id' => $creditType->id,
+        'created_by_id' => $user->id,
         'code' => 'FR_SCF_202604_000001_doe_john',
         'created_at' => '2026-04-20 15:16:00',
     ]);
@@ -36,7 +47,7 @@ test('it dispatches an upload job for each document', function () {
     $file2 = UploadedFile::fake()->create('doc2.pdf', 100);
 
     $response = $this->actingAs($user)
-        ->post(route('credit.documents.upload', $creditRequest->id), [
+        ->post("/credit/requests/{$creditRequest->id}/documents", [
             'documents' => [$file1, $file2],
             'types' => ['demande_pret', 'passport_etudiant'],
         ]);
@@ -53,14 +64,21 @@ test('it dispatches an upload job for each document', function () {
 
 test('job uploads document to correct path', function () {
     $user = User::factory()->create();
+    // Role is already created in the same database session because of RefreshDatabase and tests running sequentially?
+    // Actually RefreshDatabase refreshes between tests.
+    $role = Role::firstOrCreate(['name' => 'Super admin']);
+    $user->assignRole($role);
     $country = Country::factory()->create(['code' => 'FR']);
+    $user->countries()->attach($country);
     $student = Stakeholder::factory()->create(['type' => 'student', 'last_name' => 'Doe', 'first_name' => 'John']);
     $creditType = CreditType::factory()->create();
+    $user->creditTypes()->attach($creditType);
 
     $creditRequest = CreditRequest::factory()->create([
         'country_id' => $country->id,
         'student_id' => $student->id,
         'credit_type_id' => $creditType->id,
+        'created_by_id' => $user->id,
         'code' => 'FR_SCF_202604_000001_doe_john',
         'created_at' => '2026-04-20 15:16:00',
     ]);
