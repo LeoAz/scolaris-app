@@ -24,7 +24,7 @@ class CountryUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'code' => ['required', 'string', 'max:5', 'unique:countries,code,' . $this->country->id],
+            'code' => ['required', 'string', 'max:5', 'unique:countries,code,'.$this->country->id],
         ];
     }
 }

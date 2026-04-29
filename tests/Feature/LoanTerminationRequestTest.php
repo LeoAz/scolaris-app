@@ -1,11 +1,11 @@
 <?php
 
+use App\Enums\CreditRequestStatus;
 use App\Models\CreditRequest;
 use App\Models\LoanTerminationRequest;
 use App\Models\User;
-use App\Notifications\LoanTerminationRequestedNotification;
 use App\Notifications\LoanTerminationProcessedNotification;
-use App\Enums\CreditRequestStatus;
+use App\Notifications\LoanTerminationRequestedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
@@ -67,7 +67,7 @@ test('un administrateur peut approuver une demande de résiliation', function ()
             'interest_amount' => 10,
             'total_amount' => 1010,
             'remaining_principal' => 5000,
-            'status' => 'pending'
+            'status' => 'pending',
         ],
         [
             'installment_number' => 2,
@@ -76,8 +76,8 @@ test('un administrateur peut approuver une demande de résiliation', function ()
             'interest_amount' => 10,
             'total_amount' => 1010,
             'remaining_principal' => 4000,
-            'status' => 'pending'
-        ]
+            'status' => 'pending',
+        ],
     ]);
 
     $response = $this->actingAs($admin)

@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -73,7 +72,7 @@ return new class extends Migration
         ];
 
         foreach ($descriptions as $name => $description) {
-            \Illuminate\Support\Facades\DB::table('permissions')
+            DB::table('permissions')
                 ->where('name', $name)
                 ->update(['description' => $description]);
         }
@@ -84,6 +83,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \Illuminate\Support\Facades\DB::table('permissions')->update(['description' => null]);
+        DB::table('permissions')->update(['description' => null]);
     }
 };

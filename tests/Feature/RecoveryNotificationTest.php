@@ -7,11 +7,12 @@ use App\Models\CreditType;
 use App\Models\Stakeholder;
 use App\Models\User;
 use App\Notifications\RecoveryRecorded;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('recording a repayment sends notifications to admins of the same country', function () {
     Notification::fake();

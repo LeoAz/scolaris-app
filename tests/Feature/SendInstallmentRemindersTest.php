@@ -4,9 +4,10 @@ use App\Models\CreditRequest;
 use App\Models\CreditRequestInstallment;
 use App\Notifications\InstallmentReminder;
 use Carbon\CarbonInterface;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Notification::fake();

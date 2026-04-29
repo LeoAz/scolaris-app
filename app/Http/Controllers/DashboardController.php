@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -43,7 +43,7 @@ class DashboardController extends Controller
         $query = DB::table('credit_requests')
             ->join('countries', 'credit_requests.country_id', '=', 'countries.id')
             ->join('stakeholders', 'credit_requests.student_id', '=', 'stakeholders.id')
-            ->leftJoin('credit_request_repayments', function($join) {
+            ->leftJoin('credit_request_repayments', function ($join) {
                 $join->on('credit_requests.id', '=', 'credit_request_repayments.credit_request_id')
                     ->where('credit_request_repayments.status', '=', 'validated');
             })
@@ -67,10 +67,10 @@ class DashboardController extends Controller
 
         if ($request->has('search')) {
             $search = $request->input('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('credit_requests.code', 'like', "%{$search}%")
-                  ->orWhere('stakeholders.first_name', 'like', "%{$search}%")
-                  ->orWhere('stakeholders.last_name', 'like', "%{$search}%");
+                    ->orWhere('stakeholders.first_name', 'like', "%{$search}%")
+                    ->orWhere('stakeholders.last_name', 'like', "%{$search}%");
             });
         }
 
@@ -79,8 +79,9 @@ class DashboardController extends Controller
         }
 
         $loanDetails = $query->paginate(10)
-            ->through(function($loan) {
+            ->through(function ($loan) {
                 $loan->remaining = $loan->amount - $loan->total_repaid;
+
                 return $loan;
             });
 

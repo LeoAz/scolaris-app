@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\LoanTerminationRequestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class LoanTerminationRequest extends Model
 {
-    /** @use HasFactory<\Database\Factories\LoanTerminationRequestFactory> */
+    /** @use HasFactory<LoanTerminationRequestFactory> */
     use HasFactory;
 
     protected $fillable = [

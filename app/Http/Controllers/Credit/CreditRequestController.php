@@ -40,6 +40,9 @@ class CreditRequestController extends Controller
         if (! $user->hasFullAccessToCredits()) {
             $allowedCreditTypeIds = $user->creditTypes()->pluck('credit_types.id');
             $query->whereIn('credit_type_id', $allowedCreditTypeIds);
+
+            $allowedCountryIds = $user->countries()->pluck('countries.id');
+            $query->whereIn('country_id', $allowedCountryIds);
         }
 
         if ($request->filled('status')) {
@@ -92,9 +95,14 @@ class CreditRequestController extends Controller
             return $creditRequest;
         })->withQueryString();
 
+        $countriesQuery = Country::query();
+        if (! $user->hasFullAccessToCredits()) {
+            $countriesQuery->whereIn('id', $user->countries()->pluck('countries.id'));
+        }
+
         return Inertia::render('credit/index', [
             'creditRequests' => $creditRequests,
-            'countries' => Country::all(['id', 'name', 'code']),
+            'countries' => $countriesQuery->get(['id', 'name', 'code']),
             'filters' => $request->only(['status', 'search', 'country_id', 'date_start', 'date_end']),
             'breadcrumbs' => [
                 ['title' => 'Gestion des dossiers', 'href' => '/credit/requests'],
@@ -106,13 +114,15 @@ class CreditRequestController extends Controller
     {
         $user = auth()->user();
         $creditTypesQuery = CreditType::query();
+        $countriesQuery = Country::query();
 
         if (! $user->hasFullAccessToCredits()) {
             $creditTypesQuery->whereIn('id', $user->creditTypes()->pluck('credit_types.id'));
+            $countriesQuery->whereIn('id', $user->countries()->pluck('countries.id'));
         }
 
         return Inertia::render('credit/create', [
-            'countries' => Country::all(['id', 'name', 'code']),
+            'countries' => $countriesQuery->get(['id', 'name', 'code']),
             'creditTypes' => $creditTypesQuery->get(['id', 'name', 'rate', 'duration_months']),
             'breadcrumbs' => [
                 ['title' => 'Gestion des dossiers', 'href' => '/credit/requests'],
@@ -128,6 +138,11 @@ class CreditRequestController extends Controller
             $allowedCreditTypeIds = $user->creditTypes()->pluck('credit_types.id')->toArray();
             if (! in_array($request->credit_type_id, $allowedCreditTypeIds)) {
                 abort(403, 'Vous n\'êtes pas autorisé à créer ce type de dossier.');
+            }
+
+            $allowedCountryIds = $user->countries()->pluck('countries.id')->toArray();
+            if (! in_array($request->country_id, $allowedCountryIds)) {
+                abort(403, 'Vous n\'êtes pas autorisé à créer un dossier pour ce pays.');
             }
         }
 
@@ -220,9 +235,11 @@ class CreditRequestController extends Controller
             }
 
             // 5. Send Notifications
-            $allRecipients = $this->getStakeholders($creditRequest->country_id)
-                ->push(auth()->user())
-                ->unique('id');
+            $allRecipients = $this->getStakeholders($creditRequest->country_id);
+            if (auth()->check()) {
+                $allRecipients->push(auth()->user());
+            }
+            $allRecipients = $allRecipients->unique('id');
 
             Notification::send($allRecipients, new CreditRequestCreated($creditRequest));
 
@@ -234,15 +251,22 @@ class CreditRequestController extends Controller
     {
         $this->authorize('view', $creditRequest);
 
-        $creditRequest->load(['student', 'guarantor', 'media']);
+        $user = auth()->user();
+        $countriesQuery = Country::query();
+        $creditTypesQuery = CreditType::query();
+
+        if (! $user->hasFullAccessToCredits()) {
+            $countriesQuery->whereIn('id', $user->countries()->pluck('countries.id'));
+            $creditTypesQuery->whereIn('id', $user->creditTypes()->pluck('credit_types.id'));
+        }
 
         return Inertia::render('credit/edit', [
             'creditRequest' => array_merge($creditRequest->toArray(), [
                 'media' => $creditRequest->media,
                 'required_document_types' => CreditRequest::getRequiredDocumentTypes(),
             ]),
-            'countries' => Country::all(['id', 'name', 'code']),
-            'creditTypes' => CreditType::all(['id', 'name', 'rate', 'duration_months']),
+            'countries' => $countriesQuery->get(['id', 'name', 'code']),
+            'creditTypes' => $creditTypesQuery->get(['id', 'name', 'rate', 'duration_months']),
             'breadcrumbs' => [
                 ['title' => 'Gestion des dossiers', 'href' => '/credit/requests'],
                 ['title' => "Modifier {$creditRequest->code}", 'href' => "/credit/requests/{$creditRequest->id}/edit"],

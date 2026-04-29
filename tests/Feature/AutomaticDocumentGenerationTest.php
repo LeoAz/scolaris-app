@@ -1,14 +1,15 @@
 <?php
 
+use App\Enums\CreditRequestStatus;
 use App\Events\LoanValidated;
-use App\Jobs\GenerateDocumentJob;
+use App\Listeners\GenerateLoanContractListener;
 use App\Models\Country;
 use App\Models\CreditRequest;
 use App\Models\CreditType;
 use App\Models\Stakeholder;
 use App\Models\User;
+use Illuminate\Events\CallQueuedListener;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Spatie\Permission\Models\Role;
 
@@ -37,14 +38,14 @@ test('loan validation triggers document generation job via listener queue', func
         'created_by_id' => $user->id,
         'country_id' => $country->id,
         'amount_requested' => 1000000,
-        'status' => \App\Enums\CreditRequestStatus::SOUMIS,
+        'status' => CreditRequestStatus::SOUMIS,
     ]);
 
     // Déclencher l'événement
     LoanValidated::dispatch($creditRequest);
 
     // Vérifier que le listener a été mis en file d'attente
-    Queue::assertPushed(\Illuminate\Events\CallQueuedListener::class, function ($job) {
-        return $job->class === \App\Listeners\GenerateLoanContractListener::class;
+    Queue::assertPushed(CallQueuedListener::class, function ($job) {
+        return $job->class === GenerateLoanContractListener::class;
     });
 });

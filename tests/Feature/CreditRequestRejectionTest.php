@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CreditRequestStatus;
 use App\Models\Country;
 use App\Models\CreditRequest;
 use App\Models\CreditType;
 use App\Models\Stakeholder;
 use App\Models\User;
 use App\Notifications\CreditRequestRejected;
-use App\Enums\CreditRequestStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;

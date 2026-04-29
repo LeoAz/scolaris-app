@@ -45,11 +45,11 @@ class CountryScope implements Scope
                     });
                 });
             } elseif ($table === 'credit_request_repayments' || $table === 'credit_request_activities') {
-                 $builder->whereHas('creditRequest', function ($query) use ($countryId) {
+                $builder->whereHas('creditRequest', function ($query) use ($countryId) {
                     $query->withoutGlobalScopes()->where('credit_requests.country_id', $countryId);
                 });
             } elseif ($table === 'credit_requests') {
-                $builder->where($table . '.country_id', $countryId);
+                $builder->where($table.'.country_id', $countryId);
             }
         }
     }

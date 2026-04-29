@@ -69,7 +69,10 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->creditTypes()->where('credit_types.id', $creditRequest->credit_type_id)->exists();
+        $hasTypeAccess = $this->creditTypes()->where('credit_types.id', $creditRequest->credit_type_id)->exists();
+        $hasCountryAccess = $this->countries()->where('countries.id', $creditRequest->country_id)->exists();
+
+        return $hasTypeAccess && $hasCountryAccess;
     }
 
     /**

@@ -47,7 +47,7 @@ class LoanTerminationProcessedNotification extends Notification implements Shoul
         if ($this->request->status === 'rejected') {
             $message->line("Motif du rejet : {$this->request->rejection_reason}");
         } else {
-            $message->line("Le statut de votre dossier a été mis à jour.");
+            $message->line('Le statut de votre dossier a été mis à jour.');
         }
 
         return $message

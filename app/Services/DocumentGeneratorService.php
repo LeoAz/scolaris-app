@@ -2,28 +2,30 @@
 
 namespace App\Services;
 
+use App\Models\CreditRequest;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
-use PhpOffice\PhpWord\TemplateProcessor;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
+use PhpOffice\PhpWord\TemplateProcessor;
 
 class DocumentGeneratorService
 {
     /**
      * Génère un document PDF à partir d'un template Word.
      *
-     * @param string $templateName Nom du fichier template dans app/templates (ex: 'contract.docx')
-     * @param Model $model Le modèle contenant les données pour le remplacement
-     * @param array $extraData Données supplémentaires optionnelles
+     * @param  string  $templateName  Nom du fichier template dans app/templates (ex: 'contract.docx')
+     * @param  Model  $model  Le modèle contenant les données pour le remplacement
+     * @param  array  $extraData  Données supplémentaires optionnelles
      * @return string Chemin vers le fichier PDF temporaire généré
+     *
      * @throws Exception
      */
     public function generatePdfFromDocx(string $templateName, Model $model, array $extraData = []): string
     {
-        $templatePath = app_path('templates/' . $templateName);
+        $templatePath = app_path('templates/'.$templateName);
 
-        if (!File::exists($templatePath)) {
+        if (! File::exists($templatePath)) {
             throw new Exception("Template not found: {$templatePath}");
         }
 
@@ -41,7 +43,7 @@ class DocumentGeneratorService
 
         // 4. Enregistrer le document Word temporaire
         $tempDir = sys_get_temp_dir();
-        $tempDocx = $tempDir . DIRECTORY_SEPARATOR . uniqid('doc_', true) . '.docx';
+        $tempDocx = $tempDir.DIRECTORY_SEPARATOR.uniqid('doc_', true).'.docx';
         $templateProcessor->saveAs($tempDocx);
 
         // 5. Convertir Word en PDF en utilisant LibreOffice (soffice)
@@ -53,20 +55,20 @@ class DocumentGeneratorService
             '--headless',
             '--convert-to', 'pdf',
             '--outdir', $outputDir,
-            $tempDocx
+            $tempDocx,
         ]);
 
-        if (!$result->successful()) {
+        if (! $result->successful()) {
             @unlink($tempDocx);
-            throw new Exception("LibreOffice conversion failed: " . $result->errorOutput());
+            throw new Exception('LibreOffice conversion failed: '.$result->errorOutput());
         }
 
         // Le fichier de sortie aura le même nom que le fichier d'entrée mais avec l'extension .pdf
         $tempPdf = str_replace('.docx', '.pdf', $tempDocx);
 
-        if (!File::exists($tempPdf)) {
+        if (! File::exists($tempPdf)) {
             @unlink($tempDocx);
-            throw new Exception("PDF file was not created by LibreOffice.");
+            throw new Exception('PDF file was not created by LibreOffice.');
         }
 
         // Nettoyage du fichier DOCX temporaire (le PDF sera nettoyé par le Job)
@@ -84,7 +86,7 @@ class DocumentGeneratorService
         $data = $model->toArray();
 
         // Ajout des données spécifiques pour le contrat de prêt (CreditRequest)
-        if ($model instanceof \App\Models\CreditRequest) {
+        if ($model instanceof CreditRequest) {
             $data['Date'] = now()->format('d/m/Y');
 
             if ($model->student) {
@@ -92,11 +94,11 @@ class DocumentGeneratorService
                 $data['student_address'] = $model->student->address ?? '';
             }
 
-            $data['loan_amount'] = number_format($model->amount_requested, 0, ',', ' ') . ' FCFA';
+            $data['loan_amount'] = number_format($model->amount_requested, 0, ',', ' ').' FCFA';
 
             if ($model->creditType) {
-                $data['interest_rate'] = number_format($model->creditType->rate, 2, ',', ' ') . ' %';
-                $data['loan_duration'] = $model->creditType->duration_months . ' mois';
+                $data['interest_rate'] = number_format($model->creditType->rate, 2, ',', ' ').' %';
+                $data['loan_duration'] = $model->creditType->duration_months.' mois';
             }
 
             // Fréquence de paiement (par défaut mensuel)
@@ -104,8 +106,8 @@ class DocumentGeneratorService
         }
 
         // On garde le support pour amount_formatted au cas où
-        if (isset($data['amount_requested']) && !isset($data['amount_formatted'])) {
-            $data['amount_formatted'] = number_format($data['amount_requested'], 0, ',', ' ') . ' FCFA';
+        if (isset($data['amount_requested']) && ! isset($data['amount_formatted'])) {
+            $data['amount_formatted'] = number_format($data['amount_requested'], 0, ',', ' ').' FCFA';
         }
 
         return array_merge($data, $extraData);

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\CreditRequest;
 use App\Models\CreditRequestRepayment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,7 @@ class CreditRequestRepaymentFactory extends Factory
     public function definition(): array
     {
         return [
-            'credit_request_id' => \App\Models\CreditRequest::factory(),
+            'credit_request_id' => CreditRequest::factory(),
             'amount' => $this->faker->randomFloat(2, 100, 1000),
             'repayment_date' => $this->faker->date(),
             'payment_method' => 'cash',

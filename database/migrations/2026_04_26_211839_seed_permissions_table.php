@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -73,7 +72,7 @@ return new class extends Migration
         ];
 
         foreach ($permissions as $permission) {
-            \Illuminate\Support\Facades\DB::table('permissions')->updateOrInsert(
+            DB::table('permissions')->updateOrInsert(
                 ['name' => $permission, 'guard_name' => 'web'],
                 ['created_at' => now(), 'updated_at' => now()]
             );
@@ -146,7 +145,7 @@ return new class extends Migration
             'stakeholders.students',
         ];
 
-        \Illuminate\Support\Facades\DB::table('permissions')
+        DB::table('permissions')
             ->whereIn('name', $permissions)
             ->delete();
     }

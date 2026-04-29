@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\CreditRequest;
 use App\Models\LoanTerminationRequest;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,8 +20,8 @@ class LoanTerminationRequestFactory extends Factory
     public function definition(): array
     {
         return [
-            'credit_request_id' => \App\Models\CreditRequest::factory(),
-            'user_id' => \App\Models\User::factory(),
+            'credit_request_id' => CreditRequest::factory(),
+            'user_id' => User::factory(),
             'requested_date' => $this->faker->date(),
             'reason' => $this->faker->sentence(),
             'description' => $this->faker->paragraph(),

@@ -1,13 +1,12 @@
 <?php
 
-use App\Models\CreditRequest;
-use App\Models\User;
-use App\Models\Stakeholder;
+use App\Enums\CreditRequestStatus;
 use App\Models\Country;
+use App\Models\CreditRequest;
 use App\Models\CreditType;
-use App\Jobs\GenerateDocumentJob;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\File;
+use App\Models\Stakeholder;
+use App\Models\User;
+use App\Services\DocumentGeneratorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -21,11 +20,11 @@ test('it can generate pdf with correct data', function () {
     $student = Stakeholder::factory()->create([
         'first_name' => 'Jean',
         'last_name' => 'Dupont',
-        'address' => '123 Rue de la Paix'
+        'address' => '123 Rue de la Paix',
     ]);
     $creditType = CreditType::factory()->create([
         'rate' => 5.5,
-        'duration_months' => 12
+        'duration_months' => 12,
     ]);
 
     $creditRequest = CreditRequest::create([
@@ -36,13 +35,13 @@ test('it can generate pdf with correct data', function () {
         'created_by_id' => $user->id,
         'country_id' => $country->id,
         'amount_requested' => 1000000,
-        'status' => \App\Enums\CreditRequestStatus::CREATION,
+        'status' => CreditRequestStatus::CREATION,
     ]);
 
-    $service = new \App\Services\DocumentGeneratorService();
+    $service = new DocumentGeneratorService;
 
     // Accéder à la méthode protégée via réflexion pour tester le formatage
-    $reflection = new \ReflectionClass($service);
+    $reflection = new ReflectionClass($service);
     $method = $reflection->getMethod('prepareData');
     $method->setAccessible(true);
 

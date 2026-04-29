@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 return new class extends Migration
 {
@@ -11,30 +11,30 @@ return new class extends Migration
      */
     public function up(): void
     {
-        $superAdmin = \Spatie\Permission\Models\Role::where('name', 'Super admin')->first();
+        $superAdmin = Role::where('name', 'Super admin')->first();
         if ($superAdmin) {
-            $superAdmin->syncPermissions(\Spatie\Permission\Models\Permission::all());
+            $superAdmin->syncPermissions(Permission::all());
         }
 
-        $admin = \Spatie\Permission\Models\Role::where('name', 'Administrateur')->first();
+        $admin = Role::where('name', 'Administrateur')->first();
         if ($admin) {
-            $admin->syncPermissions(\Spatie\Permission\Models\Permission::where('name', 'like', 'admin.%')
+            $admin->syncPermissions(Permission::where('name', 'like', 'admin.%')
                 ->orWhere('name', 'dashboard')
                 ->orWhere('name', 'like', 'profile.%')
                 ->get());
         }
 
-        $controller = \Spatie\Permission\Models\Role::where('name', 'Controlleur (Dossier)')->first();
+        $controller = Role::where('name', 'Controlleur (Dossier)')->first();
         if ($controller) {
-            $controller->syncPermissions(\Spatie\Permission\Models\Permission::where('name', 'like', 'credit.%')
+            $controller->syncPermissions(Permission::where('name', 'like', 'credit.%')
                 ->where('name', 'not like', '%.destroy')
                 ->orWhere('name', 'dashboard')
                 ->get());
         }
 
-        $recouvrement = \Spatie\Permission\Models\Role::where('name', 'Recouvrement')->first();
+        $recouvrement = Role::where('name', 'Recouvrement')->first();
         if ($recouvrement) {
-            $recouvrement->syncPermissions(\Spatie\Permission\Models\Permission::where('name', 'like', 'credit.recovery.%')
+            $recouvrement->syncPermissions(Permission::where('name', 'like', 'credit.recovery.%')
                 ->orWhere('name', 'dashboard')
                 ->get());
         }

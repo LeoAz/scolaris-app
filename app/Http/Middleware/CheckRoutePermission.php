@@ -4,9 +4,9 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
-
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
+use Symfony\Component\HttpFoundation\Response;
 
 class CheckRoutePermission
 {
@@ -44,13 +44,13 @@ class CheckRoutePermission
             }
 
             // Vérifier si la permission existe dans la base de données
-            $permissionExists = \Illuminate\Support\Facades\DB::table('permissions')->where('name', $routeName)->exists();
+            $permissionExists = DB::table('permissions')->where('name', $routeName)->exists();
 
-            if (!$permissionExists) {
+            if (! $permissionExists) {
                 return $next($request);
             }
 
-            if (!$request->user()->can($routeName)) {
+            if (! $request->user()->can($routeName)) {
                 abort(403, 'Vous n\'avez pas la permission d\'accéder à cette ressource ('.$routeName.').');
             }
         }
