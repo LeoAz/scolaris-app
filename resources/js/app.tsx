@@ -7,7 +7,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { initializeTheme } from '@/hooks/use-appearance';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'SCOLARIS FINANCE';
 
 // Debug rechargement
 if (import.meta.env.DEV && !import.meta.env.SSR) {
