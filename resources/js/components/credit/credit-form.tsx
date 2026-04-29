@@ -1,5 +1,6 @@
 import { useForm, useHttp } from '@inertiajs/react';
 import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { AlertCircle, Calendar as CalendarIcon, Check, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -77,7 +78,6 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
             whatsapp_number: creditRequest?.guarantor?.whatsapp_number || '',
             address: creditRequest?.guarantor?.address || '',
             profession: creditRequest?.guarantor?.profession || '',
-            amplitude_account: creditRequest?.guarantor?.amplitude_account || '',
             id_card_number: creditRequest?.guarantor?.id_card_number || '',
             id_card_type: creditRequest?.guarantor?.id_card_type || '',
         },
@@ -135,6 +135,20 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
 
     return (
         <form onSubmit={handleSubmit} className="space-y-12">
+            {Object.keys(errors).length > 0 && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Erreur de validation</AlertTitle>
+                    <AlertDescription>
+                        Veuillez corriger les erreurs suivantes avant de continuer :
+                        <ul className="mt-2 list-inside list-disc">
+                            {Object.entries(errors).map(([key, message]) => (
+                                <li key={key}>{message.toString()}</li>
+                            ))}
+                        </ul>
+                    </AlertDescription>
+                </Alert>
+            )}
             <div className="px-4 py-2">
                 <Stepper
                     current={step}
@@ -220,7 +234,7 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                             )}
                                         >
                                             <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {data.creation_date ? format(new Date(data.creation_date), "PPP") : <span>Sélectionnez une date</span>}
+                                            {data.creation_date ? format(new Date(data.creation_date), "PPP", { locale: fr }) : <span>Sélectionnez une date</span>}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0">
@@ -229,6 +243,7 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                             selected={data.creation_date ? new Date(data.creation_date) : undefined}
                                             onSelect={(date) => setData('creation_date', date ? date.toISOString().split('T')[0] : '')}
                                             initialFocus
+                                            locale={fr}
                                         />
                                     </PopoverContent>
                                 </Popover>
@@ -447,15 +462,6 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                     onChange={(e) => setData('guarantor', { ...data.guarantor, address: e.target.value })}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="guarantor_amplitude">Compte Amplitude</Label>
-                                <Input
-                                    id="guarantor_amplitude"
-                                    value={data.guarantor.amplitude_account}
-                                    onChange={(e) => setData('guarantor', { ...data.guarantor, amplitude_account: e.target.value })}
-                                    placeholder="Numéro de compte Amplitude"
-                                />
-                            </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
@@ -531,7 +537,6 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                     <p><span className="text-muted-foreground">Nom :</span> {data.guarantor.first_name} {data.guarantor.last_name}</p>
                                     <p><span className="text-muted-foreground">Pièce :</span> {data.guarantor.id_card_type} - {data.guarantor.id_card_number}</p>
                                     <p><span className="text-muted-foreground">Email :</span> {data.guarantor.email}</p>
-                                    <p><span className="text-muted-foreground">Compte Amplitude :</span> <span className="font-mono font-medium">{data.guarantor.amplitude_account || 'N/A'}</span></p>
                                     <p><span className="text-muted-foreground">Profession :</span> {data.guarantor.profession}</p>
                                 </div>
                             </div>

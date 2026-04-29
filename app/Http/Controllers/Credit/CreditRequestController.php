@@ -159,7 +159,6 @@ class CreditRequestController extends Controller
             'guarantor.whatsapp_number' => 'nullable|string|max:255',
             'guarantor.address' => 'nullable|string|max:255',
             'guarantor.profession' => 'nullable|string|max:255',
-            'guarantor.amplitude_account' => 'nullable|string|max:255',
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
         ]);
@@ -277,7 +276,6 @@ class CreditRequestController extends Controller
             'guarantor.id' => 'nullable|exists:stakeholders,id',
             'guarantor.last_name' => 'nullable|string|max:255',
             'guarantor.first_name' => 'nullable|string|max:255',
-            'guarantor.amplitude_account' => 'nullable|string|max:255',
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
         ]);
