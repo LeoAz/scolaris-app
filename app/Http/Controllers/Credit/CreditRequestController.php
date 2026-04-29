@@ -400,6 +400,8 @@ class CreditRequestController extends Controller implements HasMiddleware
             $existing->delete();
         }
 
+        $creditRequest->loadMissing(['student', 'creditType']);
+
         $creditRequest->generateDocument(
             'loan_contract.docx',
             'contrat_de_pret_' . strtolower($creditRequest->code) . '.pdf',

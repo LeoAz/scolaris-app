@@ -72,7 +72,7 @@ class DocumentGeneratorService
         $data = $model->toArray();
 
         if ($model instanceof CreditRequest) {
-            $data['Date'] = now()->format('d/m/Y');
+            $data['current_date'] = now()->format('d/m/Y');
 
             if ($model->student) {
                 $data['student_name'] = $model->student->full_name;
@@ -87,6 +87,9 @@ class DocumentGeneratorService
             }
 
             $data['payment_frequency'] = 'Mensuelle';
+
+            // Log des données pour débogage
+            // \Illuminate\Support\Facades\Log::info('Document data:', $data);
         }
 
         if (isset($data['amount_requested']) && ! isset($data['amount_formatted'])) {
