@@ -603,7 +603,6 @@ class CreditRequestController extends Controller implements HasMiddleware
 
     public function uploadDocument(Request $request, CreditRequest $creditRequest)
     {
-        info('Policy check directly: '.(auth()->user()?->can('update', $creditRequest) ? 'YES' : 'NO'));
         Gate::authorize('update', $creditRequest);
 
         $request->validate([
