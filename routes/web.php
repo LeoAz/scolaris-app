@@ -60,6 +60,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('requests/{creditRequest}/resiliate', [CreditRequestController::class, 'resiliate'])->name('resiliate');
         Route::post('requests/{creditRequest}/cloturer', [CreditRequestController::class, 'cloturer'])->name('cloturer');
 
+        Route::post('requests/{creditRequest}/regenerate-document', [CreditRequestController::class, 'regenerateDocument'])
+            ->name('regenerate-document');
+
         Route::get('termination-requests', [LoanTerminationRequestController::class, 'index'])->name('termination-requests.index');
         Route::get('requests/{creditRequest}/termination/create', [LoanTerminationRequestController::class, 'create'])->name('termination-requests.create');
         Route::post('requests/{creditRequest}/termination', [LoanTerminationRequestController::class, 'store'])->name('termination-requests.store');

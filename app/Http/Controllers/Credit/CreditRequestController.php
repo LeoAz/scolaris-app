@@ -2,37 +2,36 @@
 
 namespace App\Http\Controllers\Credit;
 
+use App\Actions\Credit\CloseCreditRequest;
+use App\Actions\Credit\CreateCreditRequest;
+use App\Actions\Credit\RecordRepayment;
+use App\Actions\Credit\RejectCreditRequest;
+use App\Actions\Credit\RejectRepayment;
+use App\Actions\Credit\ResiliateCreditRequest;
+use App\Actions\Credit\SubmitCreditRequest;
+use App\Actions\Credit\UpdateCreditRequest;
+use App\Actions\Credit\ValidateCreditRequest;
+use App\Actions\Credit\ValidateRepayment;
 use App\Enums\CreditRequestStatus;
-use App\Events\LoanValidated;
 use App\Http\Controllers\Controller;
 use App\Jobs\UploadCreditDocument;
-use App\Jobs\UploadRepaymentProof;
 use App\Models\Country;
 use App\Models\CreditRequest;
 use App\Models\CreditRequestInstallment;
 use App\Models\CreditRequestRepayment;
 use App\Models\CreditType;
 use App\Models\Stakeholder;
-use App\Notifications\CreditRequestCreated;
-use App\Notifications\CreditRequestRejected;
-use App\Notifications\CreditRequestSubmitted;
-use App\Notifications\LoanClosedNotification;
-use App\Traits\NotifiesStakeholders;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CreditRequestController extends Controller implements HasMiddleware
 {
-    use NotifiesStakeholders;
-
     public static function middleware(): array
     {
         return [
@@ -147,7 +146,7 @@ class CreditRequestController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, CreateCreditRequest $action): RedirectResponse
     {
         $user = $request->user();
         if (! $user->hasFullAccessToCredits()) {
@@ -197,82 +196,9 @@ class CreditRequestController extends Controller implements HasMiddleware
             'guarantor.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
         ]);
 
-        return DB::transaction(function () use ($request) {
-            // 1. Handle Student (Create or Update)
-            $student = Stakeholder::updateOrCreate(
-                ['email' => $request->input('student.email')],
-                array_merge($request->student, ['type' => 'student'])
-            );
+        $creditRequest = $action->execute($request);
 
-            // 2. Handle Guarantor (if provided)
-            $guarantorId = null;
-            if ($request->filled('guarantor.last_name')) {
-                if ($request->filled('guarantor.id')) {
-                    $guarantor = Stakeholder::findOrFail($request->input('guarantor.id'));
-                    $guarantor->update(array_merge($request->guarantor, ['student_id' => $student->id]));
-                    $guarantorId = $guarantor->id;
-                } elseif ($request->filled('guarantor.email')) {
-                    $guarantor = Stakeholder::updateOrCreate(
-                        ['email' => $request->input('guarantor.email')],
-                        array_merge($request->guarantor, [
-                            'type' => 'guarantor',
-                            'student_id' => $student->id,
-                        ])
-                    );
-                    $guarantorId = $guarantor->id;
-                } else {
-                    $guarantor = Stakeholder::create(array_merge($request->guarantor, [
-                        'type' => 'guarantor',
-                        'student_id' => $student->id,
-                    ]));
-                    $guarantorId = $guarantor->id;
-                }
-            }
-
-            // 3. Generate Code
-            $country = Country::findOrFail($request->country_id);
-            $code = CreditRequest::generateCode($country, $student);
-
-            // 4. Create Credit Request
-            $creditRequest = CreditRequest::create([
-                'code' => $code,
-                'country_id' => $request->country_id,
-                'credit_type_id' => $request->credit_type_id,
-                'student_id' => $student->id,
-                'guarantor_id' => $guarantorId,
-                'amount_requested' => $request->amount_requested,
-                'initial_contribution' => $request->initial_contribution ?? 0,
-                'created_at' => $request->creation_date,
-                'status' => CreditRequestStatus::CREATION->value,
-                'created_by_id' => auth()->id(),
-            ]);
-
-            $creditRequest->calculateFees();
-            $creditRequest->save();
-
-            $creditRequest->activities()->create([
-                'user_id' => auth()->id(),
-                'action' => 'creation',
-                'description' => 'Création initiale du dossier.',
-            ]);
-
-            if ($request->hasFile('documents')) {
-                foreach ($request->file('documents') as $file) {
-                    $creditRequest->addMedia($file)->toMediaCollection('documents');
-                }
-            }
-
-            // 5. Send Notifications
-            $allRecipients = $this->getStakeholders($creditRequest->country_id);
-            if (auth()->check()) {
-                $allRecipients->push(auth()->user());
-            }
-            $allRecipients = $allRecipients->unique('id');
-
-            Notification::send($allRecipients, new CreditRequestCreated($creditRequest));
-
-            return redirect()->route('credit.show', $creditRequest->id)->with('success', 'Dossier créé avec succès.');
-        });
+        return redirect()->route('credit.show', $creditRequest->id)->with('success', 'Dossier créé avec succès.');
     }
 
     public function edit(CreditRequest $creditRequest): Response
@@ -302,7 +228,7 @@ class CreditRequestController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function update(Request $request, CreditRequest $creditRequest): RedirectResponse
+    public function update(Request $request, CreditRequest $creditRequest, UpdateCreditRequest $action): RedirectResponse
     {
         $this->authorize('update', $creditRequest);
 
@@ -338,52 +264,7 @@ class CreditRequestController extends Controller implements HasMiddleware
             'guarantor.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
         ]);
 
-        DB::transaction(function () use ($request, $creditRequest) {
-            // Update Student
-            $student = Stakeholder::findOrFail($request->input('student.id'));
-            $student->update($request->student);
-
-            // Update/Create Guarantor
-            $guarantorId = $creditRequest->guarantor_id;
-            if ($request->filled('guarantor.last_name')) {
-                if ($request->filled('guarantor.id')) {
-                    $guarantor = Stakeholder::findOrFail($request->input('guarantor.id'));
-                    $guarantor->update(array_merge($request->guarantor, ['student_id' => $creditRequest->student_id]));
-                    $guarantorId = $guarantor->id;
-                } else {
-                    $guarantor = Stakeholder::create(array_merge($request->guarantor, [
-                        'type' => 'guarantor',
-                        'student_id' => $creditRequest->student_id,
-                    ]));
-                    $guarantorId = $guarantor->id;
-                }
-            }
-
-            // Update Credit Request
-            $creditRequest->update([
-                'country_id' => $request->country_id,
-                'credit_type_id' => $request->credit_type_id,
-                'guarantor_id' => $guarantorId,
-                'amount_requested' => $request->amount_requested,
-                'initial_contribution' => $request->initial_contribution ?? 0,
-                'created_at' => $request->creation_date,
-            ]);
-
-            $creditRequest->calculateFees();
-            $creditRequest->save();
-
-            $creditRequest->activities()->create([
-                'user_id' => auth()->id(),
-                'action' => 'update',
-                'description' => 'Mise à jour des informations du dossier.',
-            ]);
-
-            if ($request->hasFile('documents')) {
-                foreach ($request->file('documents') as $file) {
-                    $creditRequest->addMedia($file)->toMediaCollection('documents');
-                }
-            }
-        });
+        $action->execute($request, $creditRequest);
 
         return redirect()->route('credit.show', $creditRequest->id)->with('success', 'Dossier mis à jour avec succès.');
     }
@@ -452,41 +333,18 @@ class CreditRequestController extends Controller implements HasMiddleware
         return $pdf->stream("recapitulatif_dossier_{$creditRequest->code}.pdf");
     }
 
-    public function submit(CreditRequest $creditRequest): RedirectResponse
+    public function submit(CreditRequest $creditRequest, SubmitCreditRequest $action): RedirectResponse
     {
         if ($creditRequest->status !== CreditRequestStatus::CREATION) {
             return back()->with('error', "Le dossier n'est pas dans un état permettant la soumission.");
         }
 
-        $creditRequest->update([
-            'status' => CreditRequestStatus::SOUMIS->value,
-            'submitted_at' => now(),
-        ]);
-
-        $creditRequest->activities()->create([
-            'user_id' => auth()->id(),
-            'action' => 'submission',
-            'description' => 'Le dossier a été soumis pour validation.',
-        ]);
-
-        // Envoyer la notification
-        $recipients = $this->getStakeholders($creditRequest->country_id);
-
-        if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, new CreditRequestSubmitted($creditRequest));
-            \Log::info('Notifications de soumission envoyées à '.$recipients->count().' destinataires.');
-        } else {
-            \Log::warning('Aucun destinataire trouvé pour la notification de soumission du dossier '.$creditRequest->code);
-        }
-
-        // Notifier aussi le créateur du dossier via l'application
-        $creditRequest->creator->notify(new CreditRequestSubmitted($creditRequest));
-        \Log::info('Notification de soumission envoyée au créateur: '.$creditRequest->creator->email);
+        $action->execute($creditRequest);
 
         return back()->with('success', 'Dossier soumis avec succès.');
     }
 
-    public function validateRequest(CreditRequest $creditRequest): RedirectResponse
+    public function validateRequest(CreditRequest $creditRequest, ValidateCreditRequest $action): RedirectResponse
     {
         if ($creditRequest->status !== CreditRequestStatus::SOUMIS) {
             return back()->with('error', "Le dossier n'est pas dans un état permettant la validation.");
@@ -499,99 +357,59 @@ class CreditRequestController extends Controller implements HasMiddleware
             return back()->with('error', 'Le dossier est incomplet. Veuillez vérifier que tous les documents requis sont présents.');
         }
 
-        $creditRequest->update([
-            'status' => CreditRequestStatus::VALIDER->value,
-            'validated_at' => now(),
-            'validated_by_id' => auth()->id(),
-        ]);
-
-        $creditRequest->activities()->create([
-            'user_id' => auth()->id(),
-            'action' => 'validation',
-            'description' => 'Le dossier a été validé.',
-        ]);
-
-        // Déclencher l'événement de validation du prêt (calcul amortissement, notifications)
-        LoanValidated::dispatch($creditRequest);
+        $action->execute($creditRequest);
 
         return back()->with('success', 'Dossier validé avec succès.');
     }
 
-    public function rejectRequest(Request $request, CreditRequest $creditRequest): RedirectResponse
+    public function rejectRequest(Request $request, CreditRequest $creditRequest, RejectCreditRequest $action): RedirectResponse
     {
         if ($creditRequest->status !== CreditRequestStatus::SOUMIS) {
             return back()->with('error', "Le dossier n'est pas dans un état permettant le rejet.");
         }
 
-        $creditRequest->update([
-            'status' => CreditRequestStatus::REJETER->value,
-            'rejected_at' => now(),
-            'rejected_by_id' => auth()->id(),
-            'rejection_reason' => $request->input('reason'),
-        ]);
-
-        $creditRequest->activities()->create([
-            'user_id' => auth()->id(),
-            'action' => 'rejection',
-            'description' => 'Le dossier a été rejeté. Motif : '.$request->input('reason', 'Non spécifié'),
-        ]);
-
-        // Destinataires : Admin, Super admin, Controleur (Dossier), Validateurs liés au pays, et le créateur
-        $recipients = $this->getStakeholders($creditRequest->country_id)
-            ->push($creditRequest->creator)
-            ->filter()
-            ->unique('id');
-
-        Notification::send($recipients, new CreditRequestRejected($creditRequest, $request->input('reason')));
+        $action->execute($creditRequest, $request->input('reason'));
 
         return back()->with('success', 'Dossier rejeté avec succès.');
     }
 
-    public function resiliate(CreditRequest $creditRequest): RedirectResponse
+    public function resiliate(CreditRequest $creditRequest, ResiliateCreditRequest $action): RedirectResponse
     {
-        $creditRequest->update([
-            'status' => CreditRequestStatus::RESILIE->value,
-        ]);
-
-        $creditRequest->activities()->create([
-            'user_id' => auth()->id(),
-            'action' => 'resiliation',
-            'description' => 'Le dossier a été résilié.',
-        ]);
-
-        // Notifier les parties prenantes
-        $recipients = $this->getStakeholders($creditRequest->country_id)
-            ->push($creditRequest->creator)
-            ->filter()
-            ->unique('id');
-
-        // Note: On pourrait créer une notification spécifique mais Rejet peut suffire ou on utilise une notification générique
-        Notification::send($recipients, new CreditRequestRejected($creditRequest, 'Résiliation du dossier'));
+        $action->execute($creditRequest);
 
         return back()->with('success', 'Dossier résilié avec succès.');
     }
 
-    public function cloturer(CreditRequest $creditRequest): RedirectResponse
+    public function cloturer(CreditRequest $creditRequest, CloseCreditRequest $action): RedirectResponse
     {
-        $creditRequest->update([
-            'status' => CreditRequestStatus::CLOTURER->value,
-        ]);
-
-        $creditRequest->activities()->create([
-            'user_id' => auth()->id(),
-            'action' => 'cloture',
-            'description' => 'Le dossier a été clôturé.',
-        ]);
-
-        // Notifier les parties prenantes
-        $recipients = $this->getStakeholders($creditRequest->country_id)
-            ->push($creditRequest->creator)
-            ->filter()
-            ->unique('id');
-
-        Notification::send($recipients, new LoanClosedNotification($creditRequest));
+        $action->execute($creditRequest);
 
         return back()->with('success', 'Dossier clôturé avec succès.');
+    }
+
+    public function regenerateDocument(Request $request, CreditRequest $creditRequest): RedirectResponse
+    {
+        $this->authorize('update', $creditRequest);
+
+        // Supprime l'ancien contrat s'il existe
+        $existing = $creditRequest->media()
+            ->where('custom_properties->type', 'loan_contract')
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+        }
+
+        $creditRequest->generateDocument(
+            'loan_contract.docx',
+            'contrat_de_pret_' . strtolower($creditRequest->code) . '.pdf',
+            [
+                'type' => 'loan_contract',
+                'user_id' => auth()->id(),
+            ]
+        );
+
+        return back()->with('success', 'Le contrat est en cours de régénération.');
     }
 
     public function destroy(CreditRequest $creditRequest)
@@ -689,7 +507,7 @@ class CreditRequestController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function recordRepayment(Request $request, CreditRequest $creditRequest, CreditRequestInstallment $installment): RedirectResponse
+    public function recordRepayment(Request $request, CreditRequest $creditRequest, CreditRequestInstallment $installment, RecordRepayment $action): RedirectResponse
     {
         $request->validate([
             'amount' => 'required|numeric|min:0',
@@ -700,85 +518,23 @@ class CreditRequestController extends Controller implements HasMiddleware
             'proof' => 'required|file|max:10240',
         ]);
 
-        $repayment = DB::transaction(function () use ($request, $creditRequest, $installment) {
-            $repayment = $installment->repayments()->create([
-                'credit_request_id' => $creditRequest->id,
-                'amount' => $request->amount,
-                'repayment_date' => $request->repayment_date,
-                'payment_method' => $request->payment_method,
-                'reference' => $request->reference,
-                'notes' => $request->notes,
-                'status' => 'pending',
-            ]);
-
-            // Store file temporarily
-            $file = $request->file('proof');
-            $tempPath = $file->store('temp-proofs', 'local');
-
-            // Dispatch job
-            UploadRepaymentProof::dispatch(
-                $repayment,
-                $tempPath,
-                $file->getClientOriginalName(),
-                auth()->id()
-            );
-
-            $creditRequest->activities()->create([
-                'user_id' => auth()->id(),
-                'action' => 'repayment_submission',
-                'description' => "Soumission d'un remboursement de {$request->amount} pour l'échéance n°{$installment->installment_number}.",
-                'properties' => [
-                    'installment_id' => $installment->id,
-                    'amount' => $request->amount,
-                    'repayment_id' => $repayment->id,
-                ],
-            ]);
-
-            return $repayment;
-        });
+        $action->execute($request, $creditRequest, $installment);
 
         return back()->with('success', 'Remboursement soumis avec succès. Il sera validé après vérification de la preuve.');
     }
 
-    public function validateRepayment(CreditRequest $creditRequest, CreditRequestRepayment $repayment): RedirectResponse
+    public function validateRepayment(CreditRequest $creditRequest, CreditRequestRepayment $repayment, ValidateRepayment $action): RedirectResponse
     {
         if ($repayment->status === 'validated') {
             return back()->with('error', 'Ce remboursement est déjà validé.');
         }
 
-        DB::transaction(function () use ($creditRequest, $repayment) {
-            $repayment->update([
-                'status' => 'validated',
-                'validated_at' => now(),
-                'validated_by_id' => auth()->id(),
-            ]);
-
-            // Mise à jour du statut de l'échéance si le montant total validé est payé
-            $installment = $repayment->installment;
-            $totalValidatedPaid = $installment->repayments()
-                ->where('status', 'validated')
-                ->sum('amount');
-
-            if ($totalValidatedPaid >= $installment->total_amount) {
-                $installment->update(['status' => 'paid']);
-            }
-
-            $creditRequest->activities()->create([
-                'user_id' => auth()->id(),
-                'action' => 'repayment_validation',
-                'description' => "Validation du remboursement de {$repayment->amount} pour l'échéance n°{$installment->installment_number}.",
-                'properties' => [
-                    'installment_id' => $installment->id,
-                    'amount' => $repayment->amount,
-                    'repayment_id' => $repayment->id,
-                ],
-            ]);
-        });
+        $action->execute($creditRequest, $repayment);
 
         return back()->with('success', 'Remboursement validé avec succès.');
     }
 
-    public function rejectRepayment(Request $request, CreditRequest $creditRequest, CreditRequestRepayment $repayment): RedirectResponse
+    public function rejectRepayment(Request $request, CreditRequest $creditRequest, CreditRequestRepayment $repayment, RejectRepayment $action): RedirectResponse
     {
         $request->validate([
             'reason' => 'required|string|max:255',
@@ -788,24 +544,7 @@ class CreditRequestController extends Controller implements HasMiddleware
             return back()->with('error', 'Un remboursement validé ne peut pas être rejeté.');
         }
 
-        DB::transaction(function () use ($creditRequest, $repayment, $request) {
-            $repayment->update([
-                'status' => 'rejected',
-                'notes' => $repayment->notes."\n\nMotif du rejet : ".$request->reason,
-            ]);
-
-            $creditRequest->activities()->create([
-                'user_id' => auth()->id(),
-                'action' => 'repayment_rejection',
-                'description' => "Rejet du remboursement de {$repayment->amount} pour l'échéance n°{$repayment->installment->installment_number}.",
-                'properties' => [
-                    'installment_id' => $repayment->installment_id,
-                    'amount' => $repayment->amount,
-                    'repayment_id' => $repayment->id,
-                    'reason' => $request->reason,
-                ],
-            ]);
-        });
+        $action->execute($creditRequest, $repayment, $request->reason);
 
         return back()->with('success', 'Remboursement rejeté.');
     }

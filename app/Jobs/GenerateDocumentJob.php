@@ -14,9 +14,6 @@ class GenerateDocumentJob implements ShouldQueue
 {
     use Queueable;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(
         protected string $templateName,
         protected Model&HasMedia $model,
@@ -24,9 +21,6 @@ class GenerateDocumentJob implements ShouldQueue
         protected array $extraData = []
     ) {}
 
-    /**
-     * Execute the job.
-     */
     public function handle(DocumentGeneratorService $generator): void
     {
         $tempPdf = $generator->generatePdfFromDocx(
@@ -35,7 +29,6 @@ class GenerateDocumentJob implements ShouldQueue
             $this->extraData
         );
 
-        // Attacher le fichier au modèle via MediaLibrary
         $media = $this->model->addMedia($tempPdf)
             ->usingFileName($this->fileName)
             ->withCustomProperties([
@@ -44,13 +37,13 @@ class GenerateDocumentJob implements ShouldQueue
             ])
             ->toMediaCollection($this->extraData['collection'] ?? 'documents');
 
-        // Ajouter une activité si c'est un CreditRequest
         if ($this->model instanceof CreditRequest) {
             $label = CreditRequest::getRequiredDocumentTypes()[$this->extraData['type'] ?? ''] ?? 'Document généré';
+
             $this->model->activities()->create([
                 'user_id' => $this->extraData['user_id'] ?? null,
                 'action' => 'document_generation',
-                'description' => "Génération automatique du document : {$label}",
+                'description' => "Génération du document : {$label}",
                 'properties' => [
                     'type' => $this->extraData['type'] ?? 'generated_document',
                     'filename' => $this->fileName,
@@ -58,7 +51,6 @@ class GenerateDocumentJob implements ShouldQueue
             ]);
         }
 
-        // Nettoyer le fichier temporaire
         if (File::exists($tempPdf)) {
             File::delete($tempPdf);
         }

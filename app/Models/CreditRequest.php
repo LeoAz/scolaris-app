@@ -227,15 +227,15 @@ class CreditRequest extends Model implements HasMedia
     }
 
     /**
-     * Déclenche la génération d'un document PDF à partir d'un template.
+     * Lance la génération d'un document PDF.
      */
-    public function generateDocument(string $templateName, string $outputFileName, array $extraData = []): void
+    public function generateDocument(string $template, string $fileName, array $data = []): void
     {
         GenerateDocumentJob::dispatch(
-            $templateName,
+            $template,
             $this,
-            $outputFileName,
-            $extraData
+            $fileName,
+            array_merge($data, ['collection' => 'documents'])
         );
     }
 

@@ -13,13 +13,6 @@ class DocumentGeneratorService
 {
     /**
      * Génère un document PDF à partir d'un template Word.
-     *
-     * @param  string  $templateName  Nom du fichier template dans app/templates (ex: 'contract.docx')
-     * @param  Model  $model  Le modèle contenant les données pour le remplacement
-     * @param  array  $extraData  Données supplémentaires optionnelles
-     * @return string Chemin vers le fichier PDF temporaire généré
-     *
-     * @throws Exception
      */
     public function generatePdfFromDocx(string $templateName, Model $model, array $extraData = []): string
     {
@@ -28,29 +21,24 @@ class DocumentGeneratorService
         if (! File::exists($templatePath)) {
             throw new Exception("Template not found: {$templatePath}");
         }
-
-        // 1. Préparer le processeur de template
         $templateProcessor = new TemplateProcessor($templatePath);
 
-        // 2. Extraire les données du modèle
         $data = $this->prepareData($model, $extraData);
 
-        // 3. Remplacer les variables dans le document Word
         foreach ($data as $key => $value) {
-            // S'assurer que la valeur est une chaîne de caractères
             $templateProcessor->setValue($key, (string) $value);
         }
 
-        // 4. Enregistrer le document Word temporaire
         $tempDir = sys_get_temp_dir();
         $tempDocx = $tempDir.DIRECTORY_SEPARATOR.uniqid('doc_', true).'.docx';
         $templateProcessor->saveAs($tempDocx);
 
-        // 5. Convertir Word en PDF en utilisant LibreOffice (soffice)
+        // 5. Convertir Word en PDF en utilisant LibreOffice
         $outputDir = $tempDir;
-        $libreOfficePath = config('app.libreoffice_path', 'soffice');
-
-        $result = Process::run([
+        $libreOfficePath = config('app.libreoffice_path', '/usr/bin/soffice');
+        $result = Process::env([
+            'HOME' => $tempDir,
+        ])->run([
             $libreOfficePath,
             '--headless',
             '--convert-to', 'pdf',
@@ -71,7 +59,6 @@ class DocumentGeneratorService
             throw new Exception('PDF file was not created by LibreOffice.');
         }
 
-        // Nettoyage du fichier DOCX temporaire (le PDF sera nettoyé par le Job)
         @unlink($tempDocx);
 
         return $tempPdf;
@@ -79,13 +66,11 @@ class DocumentGeneratorService
 
     /**
      * Prépare les données à partir du modèle.
-     * Peut être étendu pour inclure des relations ou des formats spécifiques.
      */
     protected function prepareData(Model $model, array $extraData): array
     {
         $data = $model->toArray();
 
-        // Ajout des données spécifiques pour le contrat de prêt (CreditRequest)
         if ($model instanceof CreditRequest) {
             $data['Date'] = now()->format('d/m/Y');
 
@@ -101,11 +86,9 @@ class DocumentGeneratorService
                 $data['loan_duration'] = $model->creditType->duration_months.' mois';
             }
 
-            // Fréquence de paiement (par défaut mensuel)
             $data['payment_frequency'] = 'Mensuelle';
         }
 
-        // On garde le support pour amount_formatted au cas où
         if (isset($data['amount_requested']) && ! isset($data['amount_formatted'])) {
             $data['amount_formatted'] = number_format($data['amount_requested'], 0, ',', ' ').' FCFA';
         }
