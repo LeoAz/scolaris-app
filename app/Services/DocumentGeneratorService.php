@@ -26,6 +26,9 @@ class DocumentGeneratorService
         $data = $this->prepareData($model, $extraData);
 
         foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                continue;
+            }
             $templateProcessor->setValue($key, (string) $value);
         }
 
@@ -70,6 +73,9 @@ class DocumentGeneratorService
     protected function prepareData(Model $model, array $extraData): array
     {
         $data = $model->toArray();
+
+        // On ne garde que les valeurs scalaires du modèle pour éviter les erreurs de conversion
+        $data = array_filter($data, fn ($value) => is_scalar($value) || $value === null);
 
         if ($model instanceof CreditRequest) {
             $data['current_date'] = now()->format('d/m/Y');
