@@ -7,7 +7,6 @@ use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
-use PhpOffice\PhpWord\TemplateProcessor;
 
 class DocumentGeneratorService
 {
@@ -21,20 +20,13 @@ class DocumentGeneratorService
         if (! File::exists($templatePath)) {
             throw new Exception("Template not found: {$templatePath}");
         }
-        $templateProcessor = new TemplateProcessor($templatePath);
 
-        $data = $this->prepareData($model, $extraData);
-
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                continue;
-            }
-            $templateProcessor->setValue($key, (string) $value);
-        }
-
+        // On crée un fichier temporaire pour manipuler le XML directement si nécessaire
         $tempDir = sys_get_temp_dir();
         $tempDocx = $tempDir.DIRECTORY_SEPARATOR.uniqid('doc_', true).'.docx';
-        $templateProcessor->saveAs($tempDocx);
+        File::copy($templatePath, $tempDocx);
+
+        $this->processMergeFields($tempDocx, $model, $extraData);
 
         // 5. Convertir Word en PDF en utilisant LibreOffice
         $outputDir = $tempDir;
@@ -65,6 +57,35 @@ class DocumentGeneratorService
         @unlink($tempDocx);
 
         return $tempPdf;
+    }
+
+    /**
+     * Traite les MERGEFIELD dans le document Word.
+     */
+    protected function processMergeFields(string $docxPath, Model $model, array $extraData): void
+    {
+        $data = $this->prepareData($model, $extraData);
+
+        $zip = new \ZipArchive;
+        if ($zip->open($docxPath) === true) {
+            $xmlContent = $zip->getFromName('word/document.xml');
+
+            foreach ($data as $key => $value) {
+                if (is_array($value)) {
+                    continue;
+                }
+
+                $xmlContent = str_replace('«'.$key.'»', (string) $value, $xmlContent);
+
+                // On remplace aussi les instructions de champ pour éviter que Word ne remette «key» à l'ouverture
+                // On cherche le début d'un MERGEFIELD et on s'assure de remplacer la valeur textuelle associée (<w:t>)
+                // Le motif doit être non gourmand pour ne pas dépasser le prochain <w:t>
+                $xmlContent = preg_replace('/(MERGEFIELD\s+(=)?'.$key.'\s+.*?<w:t[^>]*>)[^<]*(<\/w:t>)/s', '$1'.(string) $value.'$3', $xmlContent);
+            }
+
+            $zip->addFromString('word/document.xml', $xmlContent);
+            $zip->close();
+        }
     }
 
     /**
