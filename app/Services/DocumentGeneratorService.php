@@ -77,10 +77,37 @@ class DocumentGeneratorService
 
                 $xmlContent = str_replace('«'.$key.'»', (string) $value, $xmlContent);
 
+                // On remplace aussi les placeholders sans les chevrons (ex: guarantor_name)
+                $xmlContent = str_replace($key, (string) $value, $xmlContent);
+
                 // On remplace aussi les instructions de champ pour éviter que Word ne remette «key» à l'ouverture
                 // On cherche le début d'un MERGEFIELD et on s'assure de remplacer la valeur textuelle associée (<w:t>)
-                // Le motif doit être non gourmand pour ne pas dépasser le prochain <w:t>
-                $xmlContent = preg_replace('/(MERGEFIELD\s+(=)?'.$key.'\s+.*?<w:t[^>]*>)[^<]*(<\/w:t>)/s', '$1'.(string) $value.'$3', $xmlContent);
+                // On gère les espaces éventuels autour du nom de la variable (ex: MERGEFIELD = guarantor_name)
+                $xmlContent = preg_replace('/(MERGEFIELD\s+(=)?\s*'.$key.'\s*.*?<w:t[^>]*>)[^<]*(<\/w:t>)/s', '$1'.(string) $value.'$3', $xmlContent);
+
+                // Si le nom de la variable contient des espaces dans le MERGEFIELD lui-même (ex: MERGEFIELD guarantor_name )
+                $xmlContent = preg_replace('/(MERGEFIELD\s+(=)?\s*'.$key.'\s+.*?<w:t[^>]*>)[^<]*(<\/w:t>)/s', '$1'.(string) $value.'$3', $xmlContent);
+
+                // On remplace aussi spécifiquement les occurrences avec des espaces autour du nom dans les instructions MERGEFIELD
+                // Cela aide à capturer MERGEFIELD  =guarantor_name
+                $xmlContent = preg_replace('/MERGEFIELD\s+(=)?\s+'.$key.'\s+/', 'MERGEFIELD ='.(string) $value.' ', $xmlContent);
+                $xmlContent = preg_replace('/MERGEFIELD\s+=\s*'.$key.'\s+/', 'MERGEFIELD ='.(string) $value.' ', $xmlContent);
+                $xmlContent = preg_replace('/MERGEFIELD\s+'.$key.'\s+/', 'MERGEFIELD ='.(string) $value.' ', $xmlContent);
+
+                // On force aussi le remplacement dans l'instruction MERGEFIELD elle-même pour l'affichage cohérent dans Word
+                $xmlContent = preg_replace('/MERGEFIELD\s+(=)?\s*'.$key.'(\s+|$)/', 'MERGEFIELD ='.(string) $value.' ', $xmlContent);
+                // On gère les espaces variables dans MERGEFIELD = guarantor_name
+                $xmlContent = preg_replace('/MERGEFIELD\s+=\s*'.$key.'/', 'MERGEFIELD ='.(string) $value, $xmlContent);
+                // Cas spécifique MERGEFIELD  =guarantor_name
+                $xmlContent = preg_replace('/MERGEFIELD\s+=\s*'.$key.'/', 'MERGEFIELD ='.(string) $value, $xmlContent);
+                // Remplacement global pour tout MERGEFIELD contenant la clé, peu importe les espaces
+                $xmlContent = preg_replace('/MERGEFIELD\s+(=)?\s*'.$key.'\s+/', 'MERGEFIELD ='.(string) $value.' ', $xmlContent);
+                // Tentative brute sur le nom avec n'importe quel nombre d'espaces avant/après
+                $xmlContent = str_replace(' '.$key.' ', ' '.(string) $value.' ', $xmlContent);
+                $xmlContent = str_replace('='.$key.' ', '='.(string) $value.' ', $xmlContent);
+                $xmlContent = str_replace(' '.$key.'*', ' '.(string) $value.'*', $xmlContent);
+                $xmlContent = str_replace(' '.$key, ' '.(string) $value, $xmlContent);
+                $xmlContent = str_replace('='.$key, '='.(string) $value, $xmlContent);
             }
 
             $zip->addFromString('word/document.xml', $xmlContent);
@@ -104,6 +131,10 @@ class DocumentGeneratorService
             if ($model->student) {
                 $data['student_name'] = $model->student->full_name;
                 $data['student_address'] = $model->student->address ?? '';
+            }
+
+            if ($model->guarantor) {
+                $data['guarantor_name'] = $model->guarantor->full_name;
             }
 
             $data['loan_amount'] = number_format($model->amount_requested, 0, ',', ' ').' FCFA';

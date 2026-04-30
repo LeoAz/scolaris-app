@@ -14,7 +14,6 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
@@ -24,19 +23,15 @@ beforeEach(function () {
     Role::firstOrCreate(['name' => 'Super admin', 'guard_name' => 'web']);
     Role::firstOrCreate(['name' => 'Controlleur (Dossier)', 'guard_name' => 'web']);
 
-    $this->country = Country::firstOrCreate(['code' => 'SN'], ['name' => 'Sénégal']);
+    $this->user = User::factory()->create();
+    $this->user->assignRole('Super admin');
+
+    $this->country = Country::create(['name' => 'Sénégal', 'code' => 'SN']);
     $this->creditType = CreditType::create([
         'name' => 'Scolarité',
         'rate' => 5.0,
         'duration_months' => 10,
     ]);
-
-    $this->user = User::factory()->create();
-    $this->user->assignRole('Super admin');
-    $this->user->countries()->attach($this->country->id);
-    $this->user->creditTypes()->attach($this->creditType->id);
-
-    app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
     $this->student = Stakeholder::factory()->create();
     $this->guarantor = Stakeholder::factory()->create();
