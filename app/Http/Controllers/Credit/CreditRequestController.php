@@ -306,7 +306,7 @@ class CreditRequestController extends Controller implements HasMiddleware
         $filteredMedia = $creditRequest->media->filter(function ($media) use ($canViewContract) {
             $type = $media->getCustomProperty('type');
 
-            if (in_array($type, ['loan_contract', 'loan_contract_ov']) && ! $canViewContract) {
+            if ($type === 'loan_contract' && ! $canViewContract) {
                 return false;
             }
 
