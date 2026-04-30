@@ -14,6 +14,9 @@ class LoginResponse implements LoginResponseContract
      */
     public function toResponse($request)
     {
-        return redirect()->to('/credit/requests');
+        // On force la redirection vers la liste des dossiers de crédit,
+        // même s'il y avait une URL "intended" (prévue) en session,
+        // car la consigne métier est que tout le monde arrive sur la liste des dossiers.
+        return redirect()->route('credit.index');
     }
 }

@@ -33,6 +33,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { usePermission } from '@/hooks/use-permission';
 
 import credit, { cloturer as cloturerRoute, reject, resiliate, submit, summary } from '@/routes/credit';
 import { deleteMethod } from '@/routes/credit/documents';
@@ -56,6 +57,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 
 export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) {
     const page = usePage();
+    const { hasPermission } = usePermission();
     const status = statusConfig[creditRequest.status] || statusConfig.creation;
 
     const user = (page.props as any).auth.user as ModelUser | undefined;
@@ -325,17 +327,19 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                     <div className="flex items-center gap-3">
                         {(creditRequest.status === 'valider' || creditRequest.status === 'cloturer' || creditRequest.status === 'resilie') && (
                             <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-9 gap-2"
-                                    onClick={() => router.get(credit.installments.index({ creditRequest: creditRequest.id }).url)}
-                                >
-                                    <CreditCard className="h-4 w-4" />
-                                    <span>Échéancier</span>
-                                </Button>
+                                {hasPermission('credit.installments.index') && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-9 gap-2"
+                                        onClick={() => router.get(credit.installments.index({ creditRequest: creditRequest.id }).url)}
+                                    >
+                                        <CreditCard className="h-4 w-4" />
+                                        <span>Échéancier</span>
+                                    </Button>
+                                )}
 
-                                {(creditRequest.status === 'valider' && (creditRequest as any).can_regenerate_contract) && (
+                                {(creditRequest.status === 'valider' && (creditRequest as any).can_regenerate_contract) && hasPermission('credit.regenerate-document') && (
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -361,7 +365,7 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                 <DropdownMenuLabel>Actions disponibles</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
 
-                                {creditRequest.status === 'creation' && (
+                                {creditRequest.status === 'creation' && hasPermission('credit.submit') && (
                                     <DropdownMenuItem onClick={() => handleAction('submit')} className="cursor-pointer">
                                         <Upload className="mr-2 h-4 w-4" />
                                         <span>Soumettre le dossier</span>
@@ -370,14 +374,18 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
 
                                 {creditRequest.status === 'soumis' && (
                                     <>
-                                        <DropdownMenuItem onClick={() => handleAction('validate')} className="cursor-pointer text-green-600 focus:text-green-600">
-                                            <CheckCircle className="mr-2 h-4 w-4" />
-                                            <span>Valider le dossier</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleAction('reject')} className="cursor-pointer text-destructive focus:text-destructive">
-                                            <XCircle className="mr-2 h-4 w-4" />
-                                            <span>Rejeter le dossier</span>
-                                        </DropdownMenuItem>
+                                        {hasPermission('credit.validate') && (
+                                            <DropdownMenuItem onClick={() => handleAction('validate')} className="cursor-pointer text-green-600 focus:text-green-600">
+                                                <CheckCircle className="mr-2 h-4 w-4" />
+                                                <span>Valider le dossier</span>
+                                            </DropdownMenuItem>
+                                        )}
+                                        {hasPermission('credit.reject') && (
+                                            <DropdownMenuItem onClick={() => handleAction('reject')} className="cursor-pointer text-destructive focus:text-destructive">
+                                                <XCircle className="mr-2 h-4 w-4" />
+                                                <span>Rejeter le dossier</span>
+                                            </DropdownMenuItem>
+                                        )}
                                     </>
                                 )}
 
@@ -389,21 +397,25 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
                                     <span>Voir le récapitulatif</span>
                                 </DropdownMenuItem>
 
-                                {creditRequest.status === 'valider' && (
+                                {creditRequest.status === 'valider' && hasPermission('credit.cloturer') && (
                                     <DropdownMenuItem onClick={() => handleAction('cloturer')} className="cursor-pointer text-gray-600 focus:text-gray-600">
                                         <XCircle className="mr-2 h-4 w-4" />
                                         <span>Clôturer le dossier</span>
                                     </DropdownMenuItem>
                                 )}
 
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    onClick={() => router.get(terminationRequests.create({ query: { creditRequest: creditRequest.id } }).url)}
-                                    className="cursor-pointer text-destructive focus:text-destructive"
-                                >
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Demander la résiliation</span>
-                                </DropdownMenuItem>
+                                {hasPermission('credit.termination-requests.create') && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            onClick={() => router.get(terminationRequests.create({ query: { creditRequest: creditRequest.id } }).url)}
+                                            className="cursor-pointer text-destructive focus:text-destructive"
+                                        >
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            <span>Demander la résiliation</span>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>

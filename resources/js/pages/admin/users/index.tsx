@@ -39,6 +39,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from '@/components/ui/sheet';
+import { usePermission } from '@/hooks/use-permission';
 import AdminLayout from '@/layouts/admin/admin-layout';
 import { exportMethod as exportUsers } from '@/routes/admin/users';
 import { index as adminUsersIndex, store, update, destroy } from '@/routes/admin/users';
@@ -70,6 +71,7 @@ interface Props {
 }
 
 export default function UserIndex({ users, roles, countries, creditTypes, filters }: Props) {
+    const { hasPermission } = usePermission();
     const [isSheetOpen, setIsSheetOpen] = React.useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
     const [editingUser, setEditingUser] = React.useState<User | null>(null);
@@ -204,15 +206,21 @@ export default function UserIndex({ users, roles, countries, creditTypes, filter
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[160px]">
-                        <DropdownMenuItem onClick={() => openEditSheet(user)}>
-                            <Edit className="mr-2 h-4 w-4" /> Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => duplicateUser(user)}>
-                            <Copy className="mr-2 h-4 w-4" /> Dupliquer
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => confirmDelete(user)}>
-                            <Trash className="mr-2 h-4 w-4" /> Supprimer
-                        </DropdownMenuItem>
+                        {hasPermission('admin.users.update') && (
+                            <DropdownMenuItem onClick={() => openEditSheet(user)}>
+                                <Edit className="mr-2 h-4 w-4" /> Modifier
+                            </DropdownMenuItem>
+                        )}
+                        {hasPermission('admin.users.store') && (
+                            <DropdownMenuItem onClick={() => duplicateUser(user)}>
+                                <Copy className="mr-2 h-4 w-4" /> Dupliquer
+                            </DropdownMenuItem>
+                        )}
+                        {hasPermission('admin.users.destroy') && (
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => confirmDelete(user)}>
+                                <Trash className="mr-2 h-4 w-4" /> Supprimer
+                            </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             )
@@ -255,12 +263,16 @@ export default function UserIndex({ users, roles, countries, creditTypes, filter
                         <p className="text-muted-foreground">Gérez les utilisateurs de votre application et leurs permissions.</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={handleExport} className="shadow-sm">
-                            <Download className="mr-2 h-4 w-4" /> Exporter Excel
-                        </Button>
-                        <Button onClick={openCreateSheet} className="shadow-sm shadow-primary/20">
-                            <Plus className="mr-2 h-4 w-4" /> Ajouter un utilisateur
-                        </Button>
+                        {hasPermission('admin.users.export') && (
+                            <Button variant="outline" onClick={handleExport} className="shadow-sm">
+                                <Download className="mr-2 h-4 w-4" /> Exporter Excel
+                            </Button>
+                        )}
+                        {hasPermission('admin.users.store') && (
+                            <Button onClick={openCreateSheet} className="shadow-sm shadow-primary/20">
+                                <Plus className="mr-2 h-4 w-4" /> Ajouter un utilisateur
+                            </Button>
+                        )}
                     </div>
                 </div>
 

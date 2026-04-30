@@ -22,6 +22,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { usePermission } from '@/hooks/use-permission';
 import { index as installmentIndex } from '@/routes/credit/installments';
 import { create as terminationCreate } from '@/routes/credit/termination-requests/index';
 import type { CreditRequest } from '@/types';
@@ -101,6 +102,7 @@ export const CreditCard = memo(function CreditCard({
     onEdit,
     onDelete,
 }: CreditCardProps) {
+    const { hasPermission } = usePermission();
     const status = statusConfig[request.status] || statusConfig.creation;
     const amount = formatCurrency(request.amount_requested);
     const contribution = formatCurrency(request.initial_contribution);
@@ -222,30 +224,36 @@ export const CreditCard = memo(function CreditCard({
                                         <Eye className="mr-2 h-4 w-4" />
                                         Consulter
                                     </DropdownMenuItem>
-                                    {hasFinancials && (
+                                    {hasFinancials && hasPermission('credit.installments.index') && (
                                         <DropdownMenuItem onClick={() => router.get(installmentIndex({ creditRequest: request.id }).url)}>
                                             <CreditCardIcon className="mr-2 h-4 w-4" />
                                             Échéancier
                                         </DropdownMenuItem>
                                     )}
-                                    <DropdownMenuItem onClick={() => onEdit?.(request)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Modifier
-                                    </DropdownMenuItem>
-                                    {request.status === 'valider' && (
+                                    {hasPermission('credit.edit') && (
+                                        <DropdownMenuItem onClick={() => onEdit?.(request)}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            Modifier
+                                        </DropdownMenuItem>
+                                    )}
+                                    {request.status === 'valider' && hasPermission('credit.termination-requests.create') && (
                                         <DropdownMenuItem onClick={() => router.get(terminationCreate({ creditRequest: request.id }).url)}>
                                             <Undo2 className="mr-2 h-4 w-4" />
                                             Demander la résiliation
                                         </DropdownMenuItem>
                                     )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                        onClick={() => onDelete?.(request)}
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Supprimer
-                                    </DropdownMenuItem>
+                                    {hasPermission('credit.destroy') && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                onClick={() => onDelete?.(request)}
+                                            >
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Supprimer
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         </div>

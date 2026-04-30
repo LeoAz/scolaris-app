@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/popover";
 import { UserMenuContent } from "@/components/user-menu-content";
 import { useInitials } from "@/hooks/use-initials";
+import { usePermission } from "@/hooks/use-permission";
 import { cn } from "@/lib/utils";
 import { dashboard } from "@/routes";
 import { index as adminUsersIndex } from "@/routes/admin/users";
@@ -133,28 +134,8 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
     const page = usePage();
     const { auth } = page.props as unknown as { auth: Auth };
     const getInitials = useInitials();
+    const { hasPermission } = usePermission();
     const currentPath = page.url.split("?")[0];
-
-    const hasPermission = (permission?: string) => {
-        const roles = auth.user?.roles || [];
-
-        // L'accès au tableau de bord est réservé aux administrateurs
-        if (permission === 'dashboard') {
-            return roles.includes('Super admin') || roles.includes('Administrateur') || roles.includes('Super Administrateur');
-        }
-
-        if (roles.includes('Super admin') || roles.includes('Administrateur') || roles.includes('Super Administrateur')) {
-            return true;
-        }
-
-        if (!permission) {
-            return true;
-        }
-
-        const userPermissions = auth.user?.permissions || [];
-
-        return userPermissions.includes(permission);
-    };
 
     const filteredNavItems = mainNavItems.filter((item) => hasPermission(item.permission));
 

@@ -6,6 +6,7 @@ import React, { useMemo, useState, Suspense } from 'react';
 import { CreditCard } from '@/components/credit/credit-card';
 import { CreditListEmpty } from '@/components/credit/credit-list-empty';
 import { CreditListFilters } from '@/components/credit/credit-list-filters';
+import { usePermission } from '@/hooks/use-permission';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -48,6 +49,7 @@ export default function Index({
     filters,
     breadcrumbs,
 }: IndexProps) {
+    const { hasPermission } = usePermission();
     const [params, setParams] = useState(filters);
     const [requestToDelete, setRequestToDelete] = useState<CreditRequest | null>(null);
 
@@ -118,10 +120,12 @@ export default function Index({
                                 {creditRequests.total !== 1 ? 's' : ''} au total
                             </p>
                         </div>
-                        <Button className="h-8 rounded-lg px-4 font-medium shadow-sm" onClick={handleCreate}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Nouveau dossier
-                        </Button>
+                        {hasPermission('credit.create') && (
+                            <Button className="h-8 rounded-lg px-4 font-medium shadow-sm" onClick={handleCreate}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Nouveau dossier
+                            </Button>
+                        )}
                     </div>
 
                     <CreditListFilters

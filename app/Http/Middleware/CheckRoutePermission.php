@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use Spatie\Permission\Models\Permission;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -51,7 +52,12 @@ class CheckRoutePermission
             }
 
             if (! $request->user()->can($routeName)) {
-                abort(403, 'Vous n\'avez pas la permission d\'accéder à cette ressource ('.$routeName.').');
+                Inertia::flash('toast', [
+                    'type' => 'error',
+                    'message' => 'Vous n\'avez pas la permission nécessaire pour effectuer cette action ('.$routeName.').',
+                ]);
+
+                return back();
             }
         }
 
