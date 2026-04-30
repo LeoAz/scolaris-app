@@ -164,7 +164,6 @@ class CreditRequest extends Model implements HasMedia
             'passport_etudiant' => 'Passeport de l\'étudiant',
             'cni_passport_garant' => 'CNI ou passeport du garant',
             'ordre_virement' => 'Ordre de virement',
-            'loan_contract' => 'Accord de prêt (Contrat)',
         ];
     }
 
@@ -219,12 +218,9 @@ class CreditRequest extends Model implements HasMedia
             ->toArray();
     }
 
-    /**
-     * Determine if the credit request has all required documents.
-     */
     public function isComplete(): bool
     {
-        return count($this->getMissingDocuments()) === 0;
+        return empty($this->getMissingDocuments());
     }
 
     /**
