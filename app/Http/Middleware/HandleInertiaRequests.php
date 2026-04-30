@@ -47,7 +47,7 @@ class HandleInertiaRequests extends Middleware
                     ...$user->toArray(),
                     'roles' => $user->roles->pluck('name'),
                     'permissions' => $user->getAllPermissions()->pluck('name'),
-                    'unreadNotificationsCount' => $user->unreadNotifications()->count(),
+                    'unread_notifications_count' => $user->unreadNotifications()->count(),
                 ] : null,
             ],
             'notifications' => [

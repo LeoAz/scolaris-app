@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage, usePoll } from '@inertiajs/react';
 import {
     AlertCircle,
     CheckCircle,
@@ -53,17 +53,6 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
     resilie: { label: 'Résilié', variant: 'purple' as any },
 };
 
-const documentTypes = [
-    { value: 'demande_pret', label: 'Demande de prêt' },
-    { value: 'engagement_rembourser', label: 'Engagement à rembourser' },
-    { value: 'ouverture_compte', label: 'Ouverture de compte' },
-    { value: 'recu_micro_finance', label: 'Reçu de la micro-finance' },
-    { value: 'recu_apport_initial', label: "Reçu de l'apport initial" },
-    { value: 'passport_etudiant', label: "Passeport de l'étudiant" },
-    { value: 'cni_passport_garant', label: 'CNI ou passeport du garant' },
-    { value: 'ordre_virement', label: 'Ordre de virement' },
-    { value: 'other', label: 'Autre' },
-];
 
 export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) {
     const page = usePage();
@@ -71,6 +60,12 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
 
     const user = (page.props as any).auth.user as ModelUser | undefined;
     const isAdmin = user?.roles?.some((role: any) => ['Administrateur', 'Super admin'].includes(role.name));
+
+    usePoll(5000, {
+        only: ['creditRequest'],
+        preserveScroll: true,
+        async: true,
+    });
 
     React.useEffect(() => {
         const flash = (page.props as any).flash;
@@ -247,6 +242,7 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
         if (type.value === 'loan_contract_ov') {
             return creditRequest.status === 'valider';
         }
+
         return true;
     });
 

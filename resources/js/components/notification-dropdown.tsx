@@ -26,31 +26,35 @@ import {
     SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import type { User } from "@/types";
 import type { NotificationProps } from "@/types/notifications";
 
 export function NotificationDropdown() {
-    const { auth, notifications } = usePage().props as unknown as { auth: { user: { unread_notifications_count: number } }, notifications: NotificationProps };
+    const { auth, notifications } = usePage().props as unknown as { auth: { user: User }, notifications: NotificationProps };
     const { list } = notifications;
     const unread_count = auth.user?.unread_notifications_count ?? 0;
     const prevUnreadCount = useRef(unread_count);
 
     useEffect(() => {
-        if (unread_count > prevUnreadCount.current) {
+        // Only trigger if unread count increases AND we have at least one notification in the list
+        if (unread_count > prevUnreadCount.current && list.length > 0) {
             const newNotification = list[0];
 
-            if (newNotification) {
-                toast(newNotification.data.message, {
-                    description: formatDistanceToNow(new Date(newNotification.created_at), {
-                        addSuffix: true,
-                        locale: fr,
-                    }),
-                    action: newNotification.data.url ? {
-                        label: "Voir",
-                        onClick: () => router.visit(newNotification.data.url!),
-                    } : undefined,
-                    position: "top-right",
-                });
-            }
+            // Play notification sound
+            const audio = new Audio("/sounds/notification.mp3");
+            audio.play().catch(e => console.error("Error playing notification sound:", e));
+
+            toast(newNotification.data.message, {
+                description: formatDistanceToNow(new Date(newNotification.created_at), {
+                    addSuffix: true,
+                    locale: fr,
+                }),
+                action: newNotification.data.url ? {
+                    label: "Voir",
+                    onClick: () => router.visit(newNotification.data.url!),
+                } : undefined,
+                position: "top-right",
+            });
         }
 
         prevUnreadCount.current = unread_count;
@@ -79,7 +83,7 @@ export function NotificationDropdown() {
                     <Bell className="size-5" />
                     {unread_count > 0 && (
                         <Badge
-                            className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full px-1 py-0 text-[10px]"
+                            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full border-2 border-background px-1 py-0 text-[10px] font-bold"
                             variant="destructive"
                             title={`${unread_count} notifications non lues`}
                         >
