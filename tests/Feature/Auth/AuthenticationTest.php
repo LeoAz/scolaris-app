@@ -9,6 +9,7 @@ use Laravel\Fortify\Features;
 uses(RefreshDatabase::class);
 
 test('login screen can be rendered', function () {
+    Country::query()->delete();
     Country::factory()->create(['name' => 'Cameroun']);
     $response = $this->get(route('login'));
 
@@ -32,7 +33,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect('/credit/requests');
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {

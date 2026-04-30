@@ -45,8 +45,8 @@ class FortifyServiceProvider extends ServiceProvider
                 ->first();
 
             if ($user && Hash::check($request->password, $user->password)) {
-                // If the user is a Super Admin or Administrator, we skip the country check
-                if ($user->hasAnyRole(['Super admin', 'Administrateur', 'Super Administrateur'])) {
+                // If the user is a Super Admin, Administrator or Validator, we skip the country check
+                if ($user->hasAnyRole(['Super admin', 'Administrateur', 'Super Administrateur', 'Validateur'])) {
                     return $user;
                 }
 

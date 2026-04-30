@@ -67,6 +67,7 @@ export default function Login({
                                 <SelectValue placeholder="Sélectionner un pays..." />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="all">Tous les pays (Admin/Validateur uniquement)</SelectItem>
                                 {countries.map((country: Country) => (
                                     <SelectItem key={country.code} value={country.name}>
                                         {country.name}
