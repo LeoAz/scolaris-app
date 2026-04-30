@@ -22,8 +22,8 @@ class CountryScope implements Scope
 
         $user = Auth::user();
 
-        // Skip for super admin, admin and validator
-        if ($user && ($user->hasRole('Super admin') || $user->hasRole('Super Administrateur') || $user->hasRole('Administrateur') || $user->hasRole('Validateur'))) {
+        // Skip for users with full credit access
+        if ($user && $user->hasFullAccessToCredits()) {
             return;
         }
 

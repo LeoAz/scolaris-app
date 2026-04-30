@@ -60,7 +60,7 @@ class User extends Authenticatable
 
     public function hasFullAccessToCredits(): bool
     {
-        return $this->hasAnyRole(['Super admin', 'Administrateur']);
+        return $this->hasAnyRole(['Super admin', 'Administrateur', 'Super Administrateur', 'Validateur']);
     }
 
     public function canAccessCreditRequest(CreditRequest $creditRequest): bool
