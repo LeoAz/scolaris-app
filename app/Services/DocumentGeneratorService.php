@@ -70,17 +70,56 @@ class DocumentGeneratorService
         if ($zip->open($docxPath) === true) {
             $xmlContent = $zip->getFromName('word/document.xml');
 
+            // Nettoyage global de la fragmentation Word pour les MERGEFIELD
+            for ($i = 0; $i < 25; $i++) {
+                $old = $xmlContent;
+                // Fusion de deux tags instrText consécutifs dans un MERGEFIELD
+                $xmlContent = preg_replace_callback('/(<w:instrText[^>]*>[^<]*MERGEFIELD\s+[^<]*)<\/w:instrText>(?:<\/w:r><w:r[^>]*>)?<w:instrText[^>]*>([^<]*)<\/w:instrText>/si', function ($m) {
+                    if (str_contains($m[2], 'MERGEFIELD')) {
+                        return $m[0];
+                    }
+                    if (isset($m[2][0]) && $m[2][0] === '<') {
+                        return $m[0];
+                    }
+
+                    return $m[1].$m[2].'</w:instrText>';
+                }, $xmlContent);
+                if ($old === $xmlContent) {
+                    break;
+                }
+            }
+
             foreach ($data as $key => $value) {
                 if (is_array($value)) {
                     continue;
                 }
 
-                $xmlContent = str_replace('«'.$key.'»', (string) $value, $xmlContent);
+                $keyEscaped = preg_quote($key, '/');
+                $valStr = (string) $value;
 
-                // On remplace aussi les instructions de champ pour éviter que Word ne remette «key» à l'ouverture
-                // On cherche le début d'un MERGEFIELD et on s'assure de remplacer la valeur textuelle associée (<w:t>)
-                // Le motif doit être non gourmand pour ne pas dépasser le prochain <w:t>
-                $xmlContent = preg_replace('/(MERGEFIELD\s+(=)?'.$key.'\s+.*?<w:t[^>]*>)[^<]*(<\/w:t>)/s', '$1'.(string) $value.'$3', $xmlContent);
+                // 1. Remplacement simple du texte «key» (cas le plus simple et fiable)
+                $xmlContent = str_replace('«'.$key.'»', $valStr, $xmlContent);
+
+                // 2. Remplacement des MERGEFIELD Word
+                // On boucle pour remplacer TOUTES les occurrences de cette variable dans le XML
+                // Word peut avoir plusieurs fois le même champ de fusion.
+                for ($k = 0; $k < 5; $k++) {
+                    $oldLoopXml = $xmlContent;
+
+                    // Tentative avec séparateur
+                    $xmlContent = preg_replace_callback('/(<w:instrText[^>]*>[^<]*MERGEFIELD\s+[^<]*?=?'.$keyEscaped.'\b.*?<w:fldChar w:fldCharType="separate"\/>.*?<w:t[^>]*>)([^<]*)(<\/w:t>)/si', function ($m) use ($valStr) {
+                        return $m[1].$valStr.$m[3];
+                    }, $xmlContent);
+
+                    // Fallback sans séparateur
+                    $xmlContent = preg_replace_callback('/(<w:instrText[^>]*>[^<]*MERGEFIELD\s+[^<]*?=?'.$keyEscaped.'\b.*?<w:t[^>]*>)([^<]*)(<\/w:t>)/si', function ($m) use ($valStr) {
+                        return $m[1].$valStr.$m[3];
+                    }, $xmlContent);
+
+                    if ($oldLoopXml === $xmlContent) {
+                        break;
+                    }
+                }
             }
 
             $zip->addFromString('word/document.xml', $xmlContent);
@@ -104,6 +143,11 @@ class DocumentGeneratorService
             if ($model->student) {
                 $data['student_name'] = $model->student->full_name;
                 $data['student_address'] = $model->student->address ?? '';
+            }
+
+            if ($model->guarantor) {
+                $data['guarantor_name'] = $model->guarantor->full_name;
+                $data['guarantor_address'] = $model->guarantor->address ?? '';
             }
 
             $data['loan_amount'] = number_format($model->amount_requested, 0, ',', ' ').' FCFA';
