@@ -238,6 +238,18 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
         );
     };
 
+    const allDocumentTypes = Object.entries((creditRequest as any).all_document_types || {}).map(([value, label]) => ({
+        value,
+        label: label as string,
+    }));
+
+    const availableDocumentTypes = allDocumentTypes.filter((type) => {
+        if (type.value === 'loan_contract_ov') {
+            return creditRequest.status === 'valider';
+        }
+        return true;
+    });
+
     return (
         <>
             <Head title={`Détails dossier ${creditRequest.code}`} />
@@ -420,7 +432,7 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
 
                     <CreditDocuments
                         creditRequest={creditRequest}
-                        documentTypes={documentTypes}
+                        documentTypes={availableDocumentTypes}
                         formatFileSize={formatFileSize}
                         handleDeleteDocument={handleDeleteDocument}
                     />

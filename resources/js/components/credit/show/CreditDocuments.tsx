@@ -42,7 +42,7 @@ export default function CreditDocuments({
                     <FrameDescription>Téléverser de nouvelles pièces jointes</FrameDescription>
                 </FrameHeader>
                 <FramePanel>
-                    <CreditDocumentUpload creditRequestId={creditRequest.id} />
+                    <CreditDocumentUpload creditRequestId={creditRequest.id} documentTypes={documentTypes} />
                 </FramePanel>
             </Frame>
 

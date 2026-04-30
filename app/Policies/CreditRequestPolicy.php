@@ -69,6 +69,15 @@ class CreditRequestPolicy
     }
 
     /**
+     * Determine whether the user can upload documents after validation.
+     */
+    public function uploadAfterValidation(User $user, CreditRequest $creditRequest): bool
+    {
+        return $creditRequest->status->value === CreditRequestStatus::VALIDER->value &&
+               $user->canAccessCreditRequest($creditRequest);
+    }
+
+    /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, CreditRequest $creditRequest): bool

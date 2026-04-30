@@ -37,9 +37,10 @@ import { upload } from "@/routes/credit/documents";
 
 interface CreditDocumentUploadProps {
     creditRequestId: number;
+    documentTypes?: { value: string; label: string }[];
 }
 
-const documentTypes = [
+const defaultDocumentTypes = [
     { value: 'demande_pret', label: 'Demande de prêt' },
     { value: 'engagement_rembourser', label: 'Engagement à rembourser' },
     { value: 'ouverture_compte', label: 'Ouverture de compte' },
@@ -97,7 +98,7 @@ const getFileIcon = (file: { file: File | { type: string; name: string } }) => {
     return <FileIcon className="size-4 opacity-60" />;
 };
 
-export default function CreditDocumentUpload({ creditRequestId }: CreditDocumentUploadProps) {
+export default function CreditDocumentUpload({ creditRequestId, documentTypes = defaultDocumentTypes }: CreditDocumentUploadProps) {
     const maxSize = 10 * 1024 * 1024; // 10MB
     const maxFiles = 10;
 

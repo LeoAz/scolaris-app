@@ -306,7 +306,7 @@ class CreditRequestController extends Controller implements HasMiddleware
         $filteredMedia = $creditRequest->media->filter(function ($media) use ($canViewContract) {
             $type = $media->getCustomProperty('type');
 
-            if ($type === 'loan_contract' && ! $canViewContract) {
+            if (in_array($type, ['loan_contract', 'loan_contract_ov']) && ! $canViewContract) {
                 return false;
             }
 
@@ -325,9 +325,11 @@ class CreditRequestController extends Controller implements HasMiddleware
                 'is_complete' => $creditRequest->isComplete(),
                 'missing_documents' => $creditRequest->getMissingDocuments(),
                 'required_document_types' => CreditRequest::getRequiredDocumentTypes(),
+                'all_document_types' => CreditRequest::getAllDocumentTypes(),
                 'media' => $filteredMedia,
                 'activities' => Inertia::merge(fn () => $activities),
                 'can_regenerate_contract' => $user->can('regenerateContract', $creditRequest),
+                'can_upload_after_validation' => $user->can('uploadAfterValidation', $creditRequest),
             ]),
             'breadcrumbs' => [
                 ['title' => 'Gestion des dossiers', 'href' => '/credit/requests'],
