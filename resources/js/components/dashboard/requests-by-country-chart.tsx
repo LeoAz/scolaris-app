@@ -41,10 +41,10 @@ export function RequestsByCountryChart({ data }: RequestsChartProps) {
     const dynamicConfig = React.useMemo(() => {
         const config: ChartConfig = {};
 
-        countries.forEach((country, index) => {
+        countries.forEach((country) => {
             config[country] = {
                 label: country,
-                color: `hsl(var(--chart-${(index % 5) + 1}))`,
+                color: "hsl(217.2 91.2% 59.8%)", // Bleu (Sky-600)
             };
         });
 

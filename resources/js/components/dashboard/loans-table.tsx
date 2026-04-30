@@ -1,5 +1,5 @@
 import { router } from "@inertiajs/react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, Search } from "lucide-react";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ export interface LoanDetail {
     country: string;
     initial_contribution: number;
     amount: number;
+    total_fees: number;
     total_repaid: number;
     remaining: number;
 }
@@ -77,6 +78,20 @@ export function LoansTable({ pagination, availableCountries, filters }: LoansTab
         handleFilterChange(searchQuery, value);
     };
 
+    const handleExport = () => {
+        const params = new URLSearchParams();
+
+        if (searchQuery) {
+            params.append("search", searchQuery);
+        }
+
+        if (countryFilter && countryFilter !== "all") {
+            params.append("country", countryFilter);
+        }
+
+        window.location.href = route("dashboard.export") + (params.toString() ? `?${params.toString()}` : "");
+    };
+
     const handlePageChange = (url: string | null) => {
         if (url) {
             router.get(url, {}, { preserveState: true, preserveScroll: true });
@@ -120,6 +135,14 @@ export function LoansTable({ pagination, availableCountries, filters }: LoansTab
                                 </SelectContent>
                             </Select>
                         </div>
+                        <Button
+                            variant="outline"
+                            className="w-full md:w-auto ml-auto flex items-center gap-2"
+                            onClick={handleExport}
+                        >
+                            <FileDown className="h-4 w-4" />
+                            Exporter en Excel
+                        </Button>
                     </div>
 
                     <div className="overflow-hidden rounded-md border">
@@ -129,6 +152,7 @@ export function LoansTable({ pagination, availableCountries, filters }: LoansTab
                                     <TableHead>Dossier</TableHead>
                                     <TableHead>Étudiant</TableHead>
                                     <TableHead>Pays</TableHead>
+                                    <TableHead className="text-right">Frais de dossier</TableHead>
                                     <TableHead className="text-right">Apport Initial</TableHead>
                                     <TableHead className="text-right">Montant</TableHead>
                                     <TableHead className="text-right">Remboursé</TableHead>
@@ -142,6 +166,9 @@ export function LoansTable({ pagination, availableCountries, filters }: LoansTab
                                             <TableCell className="font-medium">{loan.code}</TableCell>
                                             <TableCell>{loan.student_name}</TableCell>
                                             <TableCell>{loan.country}</TableCell>
+                                            <TableCell className="text-right font-medium text-blue-600 dark:text-blue-400">
+                                                {formatCurrency(loan.total_fees)}
+                                            </TableCell>
                                             <TableCell className="text-right">{formatCurrency(loan.initial_contribution)}</TableCell>
                                             <TableCell className="text-right font-semibold">{formatCurrency(loan.amount)}</TableCell>
                                             <TableCell className="text-right text-green-600 dark:text-green-400">
@@ -154,7 +181,7 @@ export function LoansTable({ pagination, availableCountries, filters }: LoansTab
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-24 text-center">
+                                        <TableCell colSpan={8} className="h-24 text-center">
                                             Aucun résultat trouvé.
                                         </TableCell>
                                     </TableRow>
