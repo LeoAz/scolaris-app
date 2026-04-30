@@ -178,4 +178,27 @@ test('un dossier ne peut pas être créé sans numéro whatsapp pour le garant',
     ]);
 
     $response->assertSessionHasErrors('guarantor.whatsapp_number');
+    $response->assertSessionHasErrors(['guarantor.whatsapp_number' => 'Le numéro WhatsApp du garant est obligatoire.']);
+});
+
+test('un dossier ne peut pas être créé sans nom et prénom pour le garant', function () {
+    $response = $this->post('/credit/requests', [
+        'country_id' => $this->country->id,
+        'credit_type_id' => $this->creditType->id,
+        'amount_requested' => 1000000,
+        'creation_date' => now()->format('Y-m-d'),
+        'student' => [
+            'last_name' => 'Etudiant',
+            'first_name' => 'Test',
+            'email' => 'student4@test.com',
+            'whatsapp_number' => '123456789',
+        ],
+        'guarantor' => [
+            'last_name' => '', // Vide
+            'first_name' => '', // Vide
+            'whatsapp_number' => '987654321',
+        ],
+    ]);
+
+    $response->assertSessionHasErrors(['guarantor.last_name', 'guarantor.first_name']);
 });

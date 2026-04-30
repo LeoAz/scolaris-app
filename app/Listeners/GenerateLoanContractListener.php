@@ -11,7 +11,7 @@ class GenerateLoanContractListener implements ShouldQueue
     {
         $creditRequest = $event->creditRequest;
 
-        $creditRequest->loadMissing(['student', 'guarantor', 'creditType']);
+        $creditRequest->loadMissing(['student', 'creditType']);
 
         $creditRequest->generateDocument(
             'loan_contract.docx',

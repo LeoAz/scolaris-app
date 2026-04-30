@@ -181,10 +181,10 @@ class CreditRequestController extends Controller implements HasMiddleware
             'student.id_card_number' => 'nullable|string|max:255',
             'student.id_card_type' => 'nullable|string|max:255',
 
-            // Guarantor info (optional at first step, but needed for submission)
+            // Guarantor info (mandatory)
             'guarantor.id' => 'nullable|exists:stakeholders,id',
-            'guarantor.last_name' => 'nullable|string|max:255',
-            'guarantor.first_name' => 'nullable|string|max:255',
+            'guarantor.last_name' => 'required|string|max:255',
+            'guarantor.first_name' => 'required|string|max:255',
             'guarantor.email' => 'nullable|email|max:255|unique:stakeholders,email',
             'guarantor.whatsapp_number' => 'required|string|max:255',
             'guarantor.address' => 'nullable|string|max:255',
@@ -192,6 +192,10 @@ class CreditRequestController extends Controller implements HasMiddleware
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
         ], [
+            'student.whatsapp_number.required' => 'Le numéro WhatsApp de l\'étudiant est obligatoire.',
+            'guarantor.last_name.required' => 'Le nom du garant est obligatoire.',
+            'guarantor.first_name.required' => 'Le prénom du garant est obligatoire.',
+            'guarantor.whatsapp_number.required' => 'Le numéro WhatsApp du garant est obligatoire.',
             'student.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
             'guarantor.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
         ]);
@@ -253,13 +257,17 @@ class CreditRequestController extends Controller implements HasMiddleware
 
             // Guarantor info
             'guarantor.id' => 'nullable|exists:stakeholders,id',
-            'guarantor.last_name' => 'nullable|string|max:255',
-            'guarantor.first_name' => 'nullable|string|max:255',
+            'guarantor.last_name' => 'required|string|max:255',
+            'guarantor.first_name' => 'required|string|max:255',
             'guarantor.email' => 'nullable|email|max:255|unique:stakeholders,email,'.$request->input('guarantor.id'),
             'guarantor.whatsapp_number' => 'required|string|max:255',
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
         ], [
+            'student.whatsapp_number.required' => 'Le numéro WhatsApp de l\'étudiant est obligatoire.',
+            'guarantor.last_name.required' => 'Le nom du garant est obligatoire.',
+            'guarantor.first_name.required' => 'Le prénom du garant est obligatoire.',
+            'guarantor.whatsapp_number.required' => 'Le numéro WhatsApp du garant est obligatoire.',
             'student.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
             'guarantor.email.unique' => 'Cet email est déjà utilisé par un autre étudiant ou garant.',
         ]);

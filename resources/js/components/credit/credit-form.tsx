@@ -539,6 +539,7 @@ export function CreditForm({ creditRequest, countries, creditTypes, submitUrl, m
                                     <p><span className="text-muted-foreground">Nom :</span> {data.guarantor.first_name} {data.guarantor.last_name}</p>
                                     <p><span className="text-muted-foreground">Pièce :</span> {data.guarantor.id_card_type} - {data.guarantor.id_card_number}</p>
                                     <p><span className="text-muted-foreground">Email :</span> {data.guarantor.email}</p>
+                                    <p><span className="text-muted-foreground">WhatsApp :</span> {data.guarantor.whatsapp_number}</p>
                                     <p><span className="text-muted-foreground">Profession :</span> {data.guarantor.profession}</p>
                                 </div>
                             </div>

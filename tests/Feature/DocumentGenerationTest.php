@@ -85,20 +85,14 @@ test('document generator service replaces placeholders in docx', function () {
         'duration_months' => 12,
     ]);
 
-    $guarantor = Stakeholder::factory()->create([
-        'first_name' => 'Marc',
-        'last_name' => 'Garant',
-    ]);
-
     $creditRequest = CreditRequest::factory()->create([
         'student_id' => $student->id,
-        'guarantor_id' => $guarantor->id,
         'credit_type_id' => $creditType->id,
         'amount_requested' => 1000000,
         'code' => 'TEST-001',
     ]);
 
-    $creditRequest->load(['student', 'guarantor', 'creditType']);
+    $creditRequest->load(['student', 'creditType']);
 
     $service = new DocumentGeneratorService;
 
@@ -134,7 +128,6 @@ test('document generator service replaces placeholders in docx', function () {
     $textContent = strip_tags($xmlContent);
 
     expect($textContent)->toContain('Jean Dupont');
-    expect($textContent)->toContain('Marc Garant');
     expect($textContent)->toContain('123 Rue de la Paix');
     expect($textContent)->toContain('1 000 000 FCFA');
     expect($textContent)->toContain('5,50 %');
