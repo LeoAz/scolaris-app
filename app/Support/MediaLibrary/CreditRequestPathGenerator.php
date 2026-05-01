@@ -3,6 +3,7 @@
 namespace App\Support\MediaLibrary;
 
 use App\Models\CreditRequest;
+use App\Models\CreditRequestRepayment;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\MediaLibrary\Support\PathGenerator\PathGenerator;
 
@@ -37,17 +38,27 @@ class CreditRequestPathGenerator implements PathGenerator
      */
     protected function getBasePath(Media $media): string
     {
-        if ($media->model_type !== CreditRequest::class) {
-            return (string) $media->id;
+        $model = $media->model;
+
+        if ($media->model_type === CreditRequest::class) {
+            /** @var CreditRequest $model */
+            $countryCode = $model->country?->code ?? 'unknown';
+            $year = $model->created_at?->format('Y') ?? now()->format('Y');
+            $folderName = str_replace(['/', '\\'], '_', $model->code);
+
+            return "{$countryCode}/{$year}/{$folderName}";
         }
 
-        /** @var CreditRequest $creditRequest */
-        $creditRequest = $media->model;
+        if ($media->model_type === CreditRequestRepayment::class) {
+            /** @var CreditRequestRepayment $model */
+            $creditRequest = $model->creditRequest;
+            $countryCode = $creditRequest?->country?->code ?? 'unknown';
+            $year = $model->created_at?->format('Y') ?? now()->format('Y');
+            $folderName = $creditRequest ? str_replace(['/', '\\'], '_', $creditRequest->code).'/repayments' : 'repayments';
 
-        $countryCode = $creditRequest->country?->code ?? 'unknown';
-        $year = $creditRequest->created_at?->format('Y') ?? now()->format('Y');
-        $folderName = str_replace(['/', '\\'], '_', $creditRequest->code);
+            return "{$countryCode}/{$year}/{$folderName}";
+        }
 
-        return "{$countryCode}/{$year}/{$folderName}/{$media->id}";
+        return (string) $media->id;
     }
 }

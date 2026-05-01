@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\CreditRequest;
+use App\Models\CreditRequestRepayment;
 use App\Support\MediaLibrary\CreditRequestPathGenerator;
 use Spatie\ImageOptimizer\Optimizers\Avifenc;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
@@ -121,6 +122,7 @@ return [
      */
     'custom_path_generators' => [
         CreditRequest::class => CreditRequestPathGenerator::class,
+        CreditRequestRepayment::class => CreditRequestPathGenerator::class,
     ],
 
     /*
