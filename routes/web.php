@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CreditTypeController;
 use App\Http\Controllers\Admin\PermissionController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\ForcePasswordChangeController;
 use App\Http\Controllers\Credit\CreditRequestController;
 use App\Http\Controllers\Credit\RecoveryController;
 use App\Http\Controllers\DashboardController;
@@ -21,6 +22,9 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('dashboard/export', [DashboardController::class, 'export'])->name('dashboard.export');
+
+    Route::get('force-password-change', [ForcePasswordChangeController::class, 'show'])->name('auth.password.force-change');
+    Route::post('force-password-change', [ForcePasswordChangeController::class, 'store'])->name('auth.password.force-change.store');
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('users/export', [UserController::class, 'export'])->name('users.export');

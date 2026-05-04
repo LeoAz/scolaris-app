@@ -33,7 +33,7 @@ class SecurityController extends Controller implements HasMiddleware
         $props = [
             'canManageTwoFactor' => Features::canManageTwoFactorAuthentication(),
             'breadcrumbs' => [
-                ['title' => 'Security', 'href' => route('security.edit')],
+                ['title' => __('Security'), 'href' => route('security.edit')],
             ],
         ];
 

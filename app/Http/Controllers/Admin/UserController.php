@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UserUpdateRequest;
 use App\Models\Country;
 use App\Models\CreditType;
 use App\Models\User;
+use App\Notifications\UserCreatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -127,11 +128,14 @@ class UserController extends Controller
             'username' => $validated['username'],
             'password' => Hash::make($validated['password']),
             'password_plain' => $validated['password'],
+            'must_change_password' => true,
         ]);
 
         $user->assignRole(array_map('intval', $validated['roles']));
         $user->countries()->sync($validated['countries'] ?? []);
         $user->creditTypes()->sync($validated['credit_types'] ?? []);
+
+        $user->notify(new UserCreatedNotification($validated['password']));
 
         Inertia::flash('toast', [
             'type' => 'success',

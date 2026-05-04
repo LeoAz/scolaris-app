@@ -35,7 +35,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, Role> $roles
  * @property-read Collection<int, Permission> $permissions
  */
-#[Fillable(['name', 'email', 'username', 'password', 'password_plain'])]
+#[Fillable(['name', 'email', 'username', 'password', 'password_plain', 'must_change_password'])]
 #[Hidden(['password', 'password_plain', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -86,6 +86,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'must_change_password' => 'boolean',
         ];
     }
 }

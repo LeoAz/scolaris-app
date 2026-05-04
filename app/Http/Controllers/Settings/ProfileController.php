@@ -23,7 +23,7 @@ class ProfileController extends Controller
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => $request->session()->get('status'),
             'breadcrumbs' => [
-                ['title' => 'Profile', 'href' => route('profile.edit')],
+                ['title' => __('Profile'), 'href' => route('profile.edit')],
             ],
         ]);
     }

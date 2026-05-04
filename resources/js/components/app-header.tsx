@@ -7,7 +7,6 @@ import {
     Users,
     CircleDollarSign,
     UserX,
-    BarChart3,
 } from "lucide-react";
 import { useId } from "react";
 
@@ -92,12 +91,6 @@ const mainNavItems: NavItemWithActive[] = [
         activePath: "/credit/termination-requests",
         icon: UserX,
         permission: "menu.termination",
-    },
-    {
-        title: "Rapport",
-        href: dashboard().url,
-        icon: BarChart3,
-        permission: "menu.reports",
     },
 ];
 
@@ -205,7 +198,7 @@ export function AppHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItem[]
                         }}
                         className="relative mx-auto w-full max-w-xs"
                     >
-                        <Input className="peer h-8 ps-8 pe-10" id={id} placeholder="Search..." type="search" />
+                        <Input className="peer h-8 ps-8 pe-10" id={id} placeholder="Rechercher..." type="search" />
                         <div className="pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-2 text-muted-foreground/80 peer-disabled:opacity-50">
                             <SearchIcon size={16} aria-hidden="true" />
                         </div>
