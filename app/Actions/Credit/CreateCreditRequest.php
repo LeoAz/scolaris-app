@@ -20,10 +20,15 @@ class CreateCreditRequest
     {
         return DB::transaction(function () use ($request) {
             // 1. Handle Student (Create or Update)
-            $student = Stakeholder::updateOrCreate(
-                ['email' => $request->input('student.email')],
-                array_merge($request->student, ['type' => 'student'])
-            );
+            if ($request->filled('student.id')) {
+                $student = Stakeholder::findOrFail($request->input('student.id'));
+                $student->update(array_merge($request->student, ['type' => 'student']));
+            } else {
+                $student = Stakeholder::updateOrCreate(
+                    ['email' => $request->input('student.email')],
+                    array_merge($request->student, ['type' => 'student'])
+                );
+            }
 
             // 2. Handle Guarantor (if provided)
             $guarantorId = null;

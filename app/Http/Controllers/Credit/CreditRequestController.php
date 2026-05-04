@@ -27,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -171,10 +172,21 @@ class CreditRequestController extends Controller implements HasMiddleware
             'documents.*' => 'nullable|file|max:10240',
 
             // Student info
+            'student.id' => 'nullable|exists:stakeholders,id',
             'student.last_name' => 'required|string|max:255',
             'student.first_name' => 'required|string|max:255',
-            'student.email' => 'required|email|max:255|unique:stakeholders,email',
-            'student.whatsapp_number' => 'required|string|max:255',
+            'student.email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('stakeholders', 'email')->ignore($request->input('student.id')),
+            ],
+            'student.whatsapp_number' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('stakeholders', 'whatsapp_number')->ignore($request->input('student.id')),
+            ],
             'student.address' => 'nullable|string|max:255',
             'student.profession' => 'nullable|string|max:255',
             'student.amplitude_account' => 'nullable|string|max:255',
@@ -185,8 +197,18 @@ class CreditRequestController extends Controller implements HasMiddleware
             'guarantor.id' => 'nullable|exists:stakeholders,id',
             'guarantor.last_name' => 'required|string|max:255',
             'guarantor.first_name' => 'required|string|max:255',
-            'guarantor.email' => 'nullable|email|max:255|unique:stakeholders,email',
-            'guarantor.whatsapp_number' => 'required|string|max:255',
+            'guarantor.email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('stakeholders', 'email')->ignore($request->input('guarantor.id')),
+            ],
+            'guarantor.whatsapp_number' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('stakeholders', 'whatsapp_number')->ignore($request->input('guarantor.id')),
+            ],
             'guarantor.address' => 'nullable|string|max:255',
             'guarantor.profession' => 'nullable|string|max:255',
             'guarantor.id_card_number' => 'nullable|string|max:255',
@@ -249,8 +271,18 @@ class CreditRequestController extends Controller implements HasMiddleware
             'student.id' => 'required|exists:stakeholders,id',
             'student.last_name' => 'required|string|max:255',
             'student.first_name' => 'required|string|max:255',
-            'student.email' => 'required|email|max:255|unique:stakeholders,email,'.$request->input('student.id'),
-            'student.whatsapp_number' => 'required|string|max:255',
+            'student.email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('stakeholders', 'email')->ignore($request->input('student.id')),
+            ],
+            'student.whatsapp_number' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('stakeholders', 'whatsapp_number')->ignore($request->input('student.id')),
+            ],
             'student.amplitude_account' => 'nullable|string|max:255',
             'student.id_card_number' => 'nullable|string|max:255',
             'student.id_card_type' => 'nullable|string|max:255',
@@ -259,8 +291,18 @@ class CreditRequestController extends Controller implements HasMiddleware
             'guarantor.id' => 'nullable|exists:stakeholders,id',
             'guarantor.last_name' => 'required|string|max:255',
             'guarantor.first_name' => 'required|string|max:255',
-            'guarantor.email' => 'nullable|email|max:255|unique:stakeholders,email,'.$request->input('guarantor.id'),
-            'guarantor.whatsapp_number' => 'required|string|max:255',
+            'guarantor.email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('stakeholders', 'email')->ignore($request->input('guarantor.id')),
+            ],
+            'guarantor.whatsapp_number' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('stakeholders', 'whatsapp_number')->ignore($request->input('guarantor.id')),
+            ],
             'guarantor.id_card_number' => 'nullable|string|max:255',
             'guarantor.id_card_type' => 'nullable|string|max:255',
         ], [
