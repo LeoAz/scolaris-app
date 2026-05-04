@@ -69,18 +69,6 @@ export default function Show({ creditRequest }: Omit<ShowProps, 'breadcrumbs'>) 
         async: true,
     });
 
-    React.useEffect(() => {
-        const flash = (page.props as any).flash;
-
-        if (flash?.success) {
-            toast.success(flash.success);
-        }
-
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
-    }, [page.props]);
-
     const { post, delete: destroy, processing: submitting } = useForm();
     const rejectForm = useForm({ reason: '' });
 
